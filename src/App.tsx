@@ -529,48 +529,74 @@ const legalPagesContent = {
   },
   "FAQ": {
     title: "FAQ – Häufig gestellte Fragen",
-    content: `
-      <h2><strong>1) Seid ihr der offizielle Shop von „Die Höhle der Löwen"?</strong></h2>
-      <p>Nein. Wir sind eine <strong>unabhängige Informations- und Vermittlungsseite</strong> und <strong>nicht</strong> mit der Sendung oder den Rechteinhabern verbunden.</p>
-
-      <h2><strong>2) Verkauft ihr die Produkte selbst?</strong></h2>
-      <p>Nein. Wir <strong>verlinken</strong> auf die Shops der jeweiligen Anbieter. Der Kaufvertrag kommt <strong>dort</strong> zustande.</p>
-
-      <h2><strong>3) Seid ihr Hersteller oder Händler der Produkte?</strong></h2>
-      <p>Nein. Wir sind <strong>kein Hersteller oder Händler</strong>. <strong>Reklamation, Widerruf, Gewährleistung, Lieferung und Zahlung</strong> bitte direkt mit dem jeweiligen Anbieter klären.</p>
-
-      <h2><strong>4) An wen wende ich mich bei Fragen zu Bestellung, Lieferung, Rückgabe oder Garantie?</strong></h2>
-      <p>Bitte <strong>direkt</strong> an den jeweiligen Anbieter/Shop (Kontaktdaten findest du auf der Zielseite).</p>
-
-      <h2><strong>5) Was sind Affiliate-Links? Entstehen mir dadurch Mehrkosten?</strong></h2>
-      <p>Bei einigen Links handelt es sich um Affiliate-Links. Tätigst du nach einem Klick einen <strong>qualifizierten Kauf</strong>, erhalten wir eine Provision — <strong>ohne Mehrkosten</strong> für dich. Für Amazon gilt: <em>„Als Amazon-Partner verdienen wir an qualifizierten Verkäufen."</em></p>
-
-      <h2><strong>6) Beeinflussen Affiliate-Links eure Empfehlungen?</strong></h2>
-      <p>Nein. Unsere <strong>redaktionelle Unabhängigkeit</strong> bleibt unberührt. Werbung kennzeichnen wir transparent.</p>
-
-      <h2><strong>7) Warum werden Cookies/ähnliche Technologien verwendet?</strong></h2>
-      <p>Für technisch notwendige Funktionen (z. B. Consent-Speicherung). Für Affiliate-Tracking und ggf. Statistik/Marketing <strong>nur mit deiner Einwilligung</strong>. Du kannst deine Einwilligungen jederzeit in den <strong>[Cookie-Einstellungen]</strong> ändern (siehe <strong>Datenschutzerklärung</strong>).</p>
-
-      <h2><strong>8) Preise/Verfügbarkeiten stimmen nicht – wieso?</strong></h2>
-      <p>Preise und Lagerbestände können sich schnell ändern. Verbindlich sind <strong>immer</strong> die Angaben auf der Zielseite des Anbieters. Melde uns gern veraltete Infos.</p>
-
-      <h2><strong>9) Wie melde ich defekte Links oder nicht mehr verfügbare Produkte?</strong></h2>
-      <p>Über unseren <strong>Kontakt-Button oder direkt per Mail (dhdl@icompetence.de)</strong>. Bitte nenne Produktname, betroffene URL und ggf. einen Screenshot.</p>
-
-      <h2><strong>10) Versendet ihr Newsletter oder Werbe-Mails?</strong></h2>
-      <p>Nein. Wir betreiben <strong>kein E-Mail-Marketing</strong> und versenden <strong>keine</strong> unaufgeforderten Werbe-Mails. Erhältst du eine verdächtige E-Mail im Namen der Show/Seite, stammt sie <strong>nicht</strong> von uns (Phishing-Verdacht).</p>
-
-      <h2><strong>11) Kann ich mich über euch bei „Die Höhle der Löwen" bewerben?</strong></h2>
-      <p>Nein. Wir nehmen <strong>keine</strong> Bewerbungen an und leiten sie nicht weiter. Nutze bitte die <strong>offiziellen Bewerbungswege</strong>: <a href="https://endemolshine.de/casting/die-hoehle-der-loewen/" target="_blank">https://endemolshine.de/casting/die-hoehle-der-loewen/</a>.</p>
-
-      <h2><strong>12) Presse/Kontakt</strong></h2>
-      <p>Für Presse- oder Kooperationsanfragen: <strong>[Presse-/Kontakt-E-Mail]</strong>.</p>
-
-      <h2><strong>13) Datenschutz</strong></h2>
-      <p>Wie wir mit Daten umgehen, steht in unserer <strong>Datenschutzerklärung</strong> — inkl. Infos zu Cookies, Einwilligungen und deinen Rechten.</p>
-
-      <p><strong>Zuletzt aktualisiert:</strong> August 2025</p>
-    `
+    content: null, // Will be handled by special FAQ component
+    faqItems: [
+      {
+        id: 1,
+        question: "Seid ihr der offizielle Shop von \"Die Höhle der Löwen\"?",
+        answer: "Nein. Wir sind eine <strong>unabhängige Informations- und Vermittlungsseite</strong> und <strong>nicht</strong> mit der Sendung oder den Rechteinhabern verbunden."
+      },
+      {
+        id: 2,
+        question: "Verkauft ihr die Produkte selbst?",
+        answer: "Nein. Wir <strong>verlinken</strong> auf die Shops der jeweiligen Anbieter. Der Kaufvertrag kommt <strong>dort</strong> zustande."
+      },
+      {
+        id: 3,
+        question: "Seid ihr Hersteller oder Händler der Produkte?",
+        answer: "Nein. Wir sind <strong>kein Hersteller oder Händler</strong>. <strong>Reklamation, Widerruf, Gewährleistung, Lieferung und Zahlung</strong> bitte direkt mit dem jeweiligen Anbieter klären."
+      },
+      {
+        id: 4,
+        question: "An wen wende ich mich bei Fragen zu Bestellung, Lieferung, Rückgabe oder Garantie?",
+        answer: "Bitte <strong>direkt</strong> an den jeweiligen Anbieter/Shop (Kontaktdaten findest du auf der Zielseite)."
+      },
+      {
+        id: 5,
+        question: "Was sind Affiliate-Links? Entstehen mir dadurch Mehrkosten?",
+        answer: "Bei einigen Links handelt es sich um Affiliate-Links. Tätigst du nach einem Klick einen <strong>qualifizierten Kauf</strong>, erhalten wir eine Provision — <strong>ohne Mehrkosten</strong> für dich. Für Amazon gilt: <em>\"Als Amazon-Partner verdienen wir an qualifizierten Verkäufen.\"</em>"
+      },
+      {
+        id: 6,
+        question: "Beeinflussen Affiliate-Links eure Empfehlungen?",
+        answer: "Nein. Unsere <strong>redaktionelle Unabhängigkeit</strong> bleibt unberührt. Werbung kennzeichnen wir transparent."
+      },
+      {
+        id: 7,
+        question: "Warum werden Cookies/ähnliche Technologien verwendet?",
+        answer: "Für technisch notwendige Funktionen (z. B. Consent-Speicherung). Für Affiliate-Tracking und ggf. Statistik/Marketing <strong>nur mit deiner Einwilligung</strong>. Du kannst deine Einwilligungen jederzeit in den <strong>[Cookie-Einstellungen]</strong> ändern (siehe <strong>Datenschutzerklärung</strong>)."
+      },
+      {
+        id: 8,
+        question: "Preise/Verfügbarkeiten stimmen nicht – wieso?",
+        answer: "Preise und Lagerbestände können sich schnell ändern. Verbindlich sind <strong>immer</strong> die Angaben auf der Zielseite des Anbieters. Melde uns gern veraltete Infos."
+      },
+      {
+        id: 9,
+        question: "Wie melde ich defekte Links oder nicht mehr verfügbare Produkte?",
+        answer: "Über unseren <strong>Kontakt-Button oder direkt per Mail (dhdl@icompetence.de)</strong>. Bitte nenne Produktname, betroffene URL und ggf. einen Screenshot."
+      },
+      {
+        id: 10,
+        question: "Versendet ihr Newsletter oder Werbe-Mails?",
+        answer: "Nein. Wir betreiben <strong>kein E-Mail-Marketing</strong> und versenden <strong>keine</strong> unaufgeforderten Werbe-Mails. Erhältst du eine verdächtige E-Mail im Namen der Show/Seite, stammt sie <strong>nicht</strong> von uns (Phishing-Verdacht)."
+      },
+      {
+        id: 11,
+        question: "Kann ich mich über euch bei \"Die Höhle der Löwen\" bewerben?",
+        answer: "Nein. Wir nehmen <strong>keine</strong> Bewerbungen an und leiten sie nicht weiter. Nutze bitte die <strong>offiziellen Bewerbungswege</strong>: <a href=\"https://endemolshine.de/casting/die-hoehle-der-loewen/\" target=\"_blank\">https://endemolshine.de/casting/die-hoehle-der-loewen/</a>."
+      },
+      {
+        id: 12,
+        question: "Presse/Kontakt",
+        answer: "Für Presse- oder Kooperationsanfragen: <strong>[Presse-/Kontakt-E-Mail]</strong>."
+      },
+      {
+        id: 13,
+        question: "Datenschutz",
+        answer: "Wie wir mit Daten umgehen, steht in unserer <strong>Datenschutzerklärung</strong> — inkl. Infos zu Cookies, Einwilligungen und deinen Rechten."
+      }
+    ]
   }
 };
 
@@ -776,6 +802,17 @@ export default function App() {
   const [showBlog, setShowBlog] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<number | null>(null);
   const [showLegalPage, setShowLegalPage] = useState<string | null>(null);
+  const [expandedFAQs, setExpandedFAQs] = useState<Set<number>>(new Set());
+
+  const toggleFAQ = (id: number) => {
+    const newExpanded = new Set(expandedFAQs);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedFAQs(newExpanded);
+  };
   const [showContactModal, setShowContactModal] = useState(false);
   const [previousState, setPreviousState] = useState<{
     showSplitScreen: boolean;
@@ -2113,10 +2150,25 @@ export default function App() {
                   />
                   <style>{`
                     input {
-                      user-select: text;
+                      user-select: text !important;
+                      -webkit-user-select: text !important;
+                      -moz-user-select: text !important;
+                      -ms-user-select: text !important;
+                    }
+                    /* Global text selection override for all inputs */
+                    * {
                       -webkit-user-select: text;
                       -moz-user-select: text;
                       -ms-user-select: text;
+                      user-select: text;
+                    }
+                    *::selection {
+                      background-color: rgba(25, 83, 95, 0.7) !important;
+                      color: #FCFDFE !important;
+                    }
+                    *::-moz-selection {
+                      background-color: rgba(25, 83, 95, 0.7) !important;
+                      color: #FCFDFE !important;
                     }
                     input::placeholder {
                       color: #c0c5ca;
@@ -2143,6 +2195,19 @@ export default function App() {
                       text-overflow: ellipsis;
                       white-space: nowrap;
                       overflow: hidden;
+                    }
+                    /* Text selection highlighting for home screen */
+                    input::selection {
+                      background-color: rgba(25, 83, 95, 0.7) !important;
+                      color: #FCFDFE !important;
+                    }
+                    input::-moz-selection {
+                      background-color: rgba(25, 83, 95, 0.7) !important;
+                      color: #FCFDFE !important;
+                    }
+                    input::-webkit-selection {
+                      background-color: rgba(25, 83, 95, 0.7) !important;
+                      color: #FCFDFE !important;
                     }
                   `}</style>
                 </div>
@@ -2938,16 +3003,79 @@ export default function App() {
               {/* Legal Page Body */}
               <div className="flex-1 overflow-y-auto">
                 <div className="px-8 pb-8">
-                  <div 
-                    className="max-w-none legal-content"
-                    style={{ 
-                      color: "#374151",
-                      lineHeight: "1.7"
-                    }}
-                    dangerouslySetInnerHTML={{ 
-                      __html: legalPagesContent[showLegalPage as keyof typeof legalPagesContent]?.content || ""
-                    }}
-                  />
+                  {/* Special handling for FAQ page */}
+                  {showLegalPage === "FAQ" ? (
+                    <div className="space-y-4">
+                      {legalPagesContent.FAQ.faqItems?.map((faq) => (
+                        <motion.div
+                          key={faq.id}
+                          className="border rounded-xl overflow-hidden"
+                          style={{
+                            borderColor: "rgba(209, 213, 219, 0.3)",
+                            backgroundColor: "#FCFDFE",
+                          }}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: faq.id * 0.05 }}
+                        >
+                          <button
+                            onClick={() => toggleFAQ(faq.id)}
+                            className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+                          >
+                            <span 
+                              className="font-semibold pr-4"
+                              style={{ color: "#100007" }}
+                            >
+                              {faq.question}
+                            </span>
+                            <ChevronDown 
+                              className={`w-5 h-5 transition-transform duration-200 flex-shrink-0 ${
+                                expandedFAQs.has(faq.id) ? 'rotate-180' : ''
+                              }`}
+                              style={{ color: "#6B7280" }}
+                            />
+                          </button>
+                          
+                          <motion.div
+                            initial={false}
+                            animate={{
+                              height: expandedFAQs.has(faq.id) ? 'auto' : 0,
+                              opacity: expandedFAQs.has(faq.id) ? 1 : 0
+                            }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div 
+                              className="px-6 pb-4 border-t"
+                              style={{ 
+                                borderColor: "rgba(209, 213, 219, 0.2)",
+                                color: "#374151",
+                                lineHeight: "1.7"
+                              }}
+                              dangerouslySetInnerHTML={{ __html: faq.answer }}
+                            />
+                          </motion.div>
+                        </motion.div>
+                      ))}
+                      
+                      <div className="mt-8 pt-6 border-t" style={{ borderColor: "rgba(209, 213, 219, 0.2)" }}>
+                        <p style={{ color: "#6B7280", textAlign: "center" }}>
+                          <strong>Zuletzt aktualisiert:</strong> August 2025
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      className="max-w-none legal-content"
+                      style={{ 
+                        color: "#374151",
+                        lineHeight: "1.7"
+                      }}
+                      dangerouslySetInnerHTML={{ 
+                        __html: legalPagesContent[showLegalPage as keyof typeof legalPagesContent]?.content || ""
+                      }}
+                    />
+                  )}
                   
                   <style>{`
                     .legal-content h2 {
@@ -4323,6 +4451,19 @@ export default function App() {
                             text-overflow: ellipsis;
                             white-space: nowrap;
                             overflow: hidden;
+                          }
+                          /* Text selection highlighting for split screen */
+                          input::selection {
+                            background-color: rgba(252, 253, 254, 0.6) !important;
+                            color: #19535F !important;
+                          }
+                          input::-moz-selection {
+                            background-color: rgba(252, 253, 254, 0.6) !important;
+                            color: #19535F !important;
+                          }
+                          input::-webkit-selection {
+                            background-color: rgba(252, 253, 254, 0.6) !important;
+                            color: #19535F !important;
                           }
                         `}</style>
                       </div>
