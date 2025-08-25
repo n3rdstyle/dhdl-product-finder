@@ -802,6 +802,9 @@ export default function App() {
   const [showBlog, setShowBlog] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<number | null>(null);
   const [showLegalPage, setShowLegalPage] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTabletPortrait, setIsTabletPortrait] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [expandedFAQs, setExpandedFAQs] = useState<Set<number>>(new Set());
 
   const toggleFAQ = (id: number) => {
@@ -865,6 +868,23 @@ export default function App() {
     };
   }, [searchHistory]);
 
+  // Mobile detection
+  useEffect(() => {
+    const checkViewportType = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      setIsMobile(width < 768);
+      
+      // Detect tablet portrait: width between 768-1023px and height > width
+      setIsTabletPortrait(width >= 768 && width <= 1023 && height > width);
+    };
+    
+    checkViewportType();
+    window.addEventListener('resize', checkViewportType);
+    
+    return () => window.removeEventListener('resize', checkViewportType);
+  }, []);
 
   const handleSearch = async () => {
     if (searchQuery.trim() || selectedImage) {
@@ -895,6 +915,11 @@ export default function App() {
       setShowSplitScreen(true);
       setShowProductSearch(true);
       setIsLoading(true);
+      
+      // Open chat window on mobile when searching from search bar
+      if (isMobile) {
+        setIsChatOpen(true);
+      }
 
       try {
         let apiResponse;
@@ -1522,6 +1547,11 @@ export default function App() {
       setShowSplitScreen(true);
       setShowProductSearch(true);
       setIsLoading(true);
+      
+      // Open chat window on mobile when searching from image button
+      if (isMobile) {
+        setIsChatOpen(true);
+      }
 
       try {
         const imageBase64 = await apiService.convertFileToBase64(selectedImage);
@@ -1557,6 +1587,11 @@ export default function App() {
       setShowSplitScreen(true);
       setShowProductSearch(true);
       setIsLoading(true);
+      
+      // Open chat window on mobile when uploading image
+      if (isMobile) {
+        setIsChatOpen(true);
+      }
       
       // Automatically trigger search for the uploaded image
       const searchTerm = file.name;
@@ -1844,6 +1879,11 @@ export default function App() {
       
       setShowProductSearch(true);
       setIsLoading(true);
+      
+      // Close mobile chat drawer when search is submitted
+      if (isMobile) {
+        setIsChatOpen(false);
+      }
 
       try {
         const apiResponse = await apiService.searchByText(splitScreenSearchQuery.trim(), 0.5);
@@ -2135,7 +2175,7 @@ export default function App() {
                   />
                   <Input
                     type="text"
-                    placeholder="Ich suche ein Höhle der Löwen-Produkt ..."
+                    placeholder={isMobile ? "Produkt suchen..." : "Ich suche ein Höhle der Löwen-Produkt ..."}
                     value={searchQuery}
                     onChange={(e) =>
                       setSearchQuery(e.target.value)
@@ -2216,7 +2256,7 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <motion.button
                     onClick={handleSearch}
-                    className="px-6 py-2 h-11 rounded-xl transition-all duration-200 shadow-lg"
+                    className={`${isMobile ? 'w-11 h-11 rounded-xl flex items-center justify-center' : 'px-6 py-2 h-11 rounded-xl'} transition-all duration-200 shadow-lg`}
                     style={{
                       backgroundColor: "#19535F",
                       color: "#FCFDFE",
@@ -2230,13 +2270,14 @@ export default function App() {
                         "#19535F";
                     }}
                   >
-                    Suchen
+                    <Search className="w-5 h-5 xl:hidden" />
+                    <span className="hidden xl:block">Suchen</span>
                   </motion.button>
 
                   {/* Image upload button */}
                   <motion.button
                     onClick={handleImageSearch}
-                    className="flex items-center gap-2 px-6 py-2 h-11 rounded-xl transition-all duration-200"
+                    className={`${isMobile ? 'w-11 h-11 rounded-xl flex items-center justify-center' : 'flex items-center gap-2 px-6 py-2 h-11 rounded-xl'} transition-all duration-200`}
                     style={{
                       backgroundColor: "#F2F7F8",
                       color: "#6B7280",
@@ -2250,12 +2291,10 @@ export default function App() {
                         "#F2F7F8";
                     }}
                   >
-                    <>
-                      <Upload className="w-4 h-4" />
-                      <span className="text-sm hidden sm:block">
-                        Bild hochladen
-                      </span>
-                    </>
+                    <Upload className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+                    <span className="hidden xl:block text-sm">
+                      Bild hochladen
+                    </span>
                   </motion.button>
                   <input
                     id="image-upload"
@@ -2879,63 +2918,65 @@ export default function App() {
 
               {/* Right Side Actions */}
               <div className="flex items-center gap-3">
-                {/* Back to Product Search Button */}
-                <motion.button
-                  onClick={() => {
-                    // Restore previous state or go to product search
-                    if (previousState) {
-                      setShowSplitScreen(previousState.showSplitScreen);
-                      setShowBlog(previousState.showBlog);
-                      setSelectedArticle(previousState.selectedArticle);
-                      setCurrentSearchTerm(previousState.currentSearchTerm);
-                      setFilteredProducts(previousState.filteredProducts);
-                      setShowProductSearch(previousState.showProductSearch);
-                      setShowLegalPage(null);
-                      setPreviousState(null);
-                    } else {
-                      // Reset states and trigger animations
-                      setShowProductSearch(false);
-                      setShowLegalPage(null);
-                      setShowSplitScreen(true);
-                      setCurrentSearchTerm("Alle Produkte");
-                      setFilteredProducts([]);
-                      setIsLoading(true);
-                      
-                      // Small delay to let React process the state change
-                      setTimeout(() => {
-                        setShowProductSearch(true);
-                      }, 50);
-                      
-                      // Simulate loading time
-                      setTimeout(() => {
-                        setIsLoading(false);
-                      }, 1000);
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm"
-                  style={{
-                    backgroundColor: "#19535F",
-                    color: "#FCFDFE",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "#144249";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "#19535F";
-                  }}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Search className="w-4 h-4" />
-                  <span className="hidden sm:block">
-                    Zur Produktsuche
-                  </span>
-                </motion.button>
+                {/* Back to Product Search Button - hidden on mobile */}
+                {!isMobile && (
+                  <motion.button
+                    onClick={() => {
+                      // Restore previous state or go to product search
+                      if (previousState) {
+                        setShowSplitScreen(previousState.showSplitScreen);
+                        setShowBlog(previousState.showBlog);
+                        setSelectedArticle(previousState.selectedArticle);
+                        setCurrentSearchTerm(previousState.currentSearchTerm);
+                        setFilteredProducts(previousState.filteredProducts);
+                        setShowProductSearch(previousState.showProductSearch);
+                        setShowLegalPage(null);
+                        setPreviousState(null);
+                      } else {
+                        // Reset states and trigger animations
+                        setShowProductSearch(false);
+                        setShowLegalPage(null);
+                        setShowSplitScreen(true);
+                        setCurrentSearchTerm("Alle Produkte");
+                        setFilteredProducts([]);
+                        setIsLoading(true);
+                        
+                        // Small delay to let React process the state change
+                        setTimeout(() => {
+                          setShowProductSearch(true);
+                        }, 50);
+                        
+                        // Simulate loading time
+                        setTimeout(() => {
+                          setIsLoading(false);
+                        }, 1000);
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm"
+                    style={{
+                      backgroundColor: "#19535F",
+                      color: "#FCFDFE",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "#144249";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "#19535F";
+                    }}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="hidden lg:block">
+                      Zur Produktsuche
+                    </span>
+                  </motion.button>
+                )}
 
                 <motion.button
                   onClick={() => setShowMenu(true)}
@@ -3448,9 +3489,10 @@ export default function App() {
 
               {/* Right Side Actions */}
               <div className="flex items-center gap-3">
-                {/* Back to Product Search Button */}
-                <motion.button
-                  onClick={() => {
+                {/* Back to Product Search Button - hidden on mobile */}
+                {!isMobile && (
+                  <motion.button
+                    onClick={() => {
                     // Reset states and trigger animations
                     setShowProductSearch(false);
                     setShowBlog(false);
@@ -3489,10 +3531,11 @@ export default function App() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <Search className="w-4 h-4" />
-                  <span className="hidden sm:block">
+                  <span className="hidden lg:block">
                     Zur Produktsuche
                   </span>
                 </motion.button>
+                )}
 
                 <motion.button
                   onClick={() => setShowMenu(true)}
@@ -4205,8 +4248,8 @@ export default function App() {
 
               {/* Right Side Actions */}
               <div className="flex items-center gap-3">
-                {/* Search Button - only visible when product search is hidden */}
-                {!showProductSearch && (
+                {/* Search Button - only visible when product search is hidden and not on mobile */}
+                {!showProductSearch && !isMobile && (
                   <motion.button
                     onClick={handleOpenProductSearch}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm"
@@ -4227,7 +4270,7 @@ export default function App() {
                     transition={{ duration: 0.3 }}
                   >
                     <Search className="w-4 h-4" />
-                    <span className="hidden sm:block">
+                    <span className="hidden lg:block">
                       Zur Produktsuche
                     </span>
                   </motion.button>
@@ -4259,54 +4302,68 @@ export default function App() {
           </motion.nav>
 
           {/* Split screen content */}
-          <div className="flex h-[calc(100vh-72px)] px-4 py-4 gap-4">
-            {/* Left side - Chat Window */}
-            {showProductSearch && (
+          <div className={`${isMobile ? 'relative' : 'flex'} h-[calc(100vh-72px)] ${isMobile ? 'px-2 py-2' : 'px-4 py-4'} ${isMobile ? '' : 'gap-4'}`}>
+            {/* Desktop: Left side - Chat Window, Mobile: Drawer above bottom button */}
+            {((showProductSearch && !isMobile) || (isMobile && isChatOpen)) && (
               <motion.div
-                className="w-1/3 h-full rounded-2xl flex flex-col"
+                className={`${
+                  isMobile 
+                    ? 'fixed bottom-0 left-0 right-0 z-[1000] bg-white rounded-t-2xl shadow-2xl h-[70vh]'
+                    : 'md:w-1/3 lg:w-1/3 ipad-mini-chat h-full rounded-2xl'
+                } flex flex-col`}
                 style={{
-                  backgroundColor: "#FCFDFE",
+                  backgroundColor: isMobile ? "#FFFFFF" : "#FCFDFE",
                   opacity: 1.0,
                   borderColor: isDragOver ? "rgba(99, 102, 241, 0.5)" : "rgba(252, 253, 254, 0.2)",
                   borderWidth: "1px",
                 }}
-                initial={{ x: -100, opacity: 0, scale: 0.95 }}
-                animate={{ x: 0, opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                initial={isMobile ? { y: '100%' } : { x: -100, opacity: 0, scale: 0.95 }}
+                animate={isMobile ? { y: 0 } : { x: 0, opacity: 1, scale: 1 }}
+                transition={{ duration: isMobile ? 0.3 : 0.5, delay: isMobile ? 0 : 0.1 }}
+                exit={isMobile ? { y: '100%' } : { x: -100, opacity: 0, scale: 0.95 }}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
               >
+                {/* Header */}
                 <div
-                  className="p-6 flex items-center justify-between"
-                  style={{
-                    borderBottomColor:
-                      "rgba(252, 253, 254, 0.4)",
-                    borderBottomWidth: "1px",
-                  }}
-                >
+                    className={`${isMobile ? 'px-4 py-3' : 'p-6'} flex items-center justify-between`}
+                    style={{
+                      borderBottomColor: "rgba(252, 253, 254, 0.4)",
+                      borderBottomWidth: "1px",
+                    }}
+                  >
                   <div>
                     <div className="flex items-center gap-2">
                       <Search
-                        className="w-5 h-5"
+                        className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`}
                         style={{ color: "#19535F" }}
                       />
                       <h3
-                        className="text-lg font-medium"
+                        className={`${isMobile ? 'text-base' : 'text-lg'} font-medium`}
                         style={{ color: "#100007" }}
                       >
                         Produktsuche
                       </h3>
                     </div>
                   </div>
+                  {isMobile && (
+                    <button
+                      onClick={() => setIsChatOpen(false)}
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="w-4 h-4" style={{ color: "#19535F" }} />
+                    </button>
+                  )}
                 </div>
 
-                <div className="flex-1 p-6 overflow-y-auto" ref={chatContainerRef}>
+                {/* Content */}
+                <div className={`flex-1 ${isMobile ? 'p-4' : 'p-6'} overflow-y-auto`} ref={chatContainerRef}>
                   <div className="space-y-4">
                     {/* Display search history and responses in chronological order */}
                     {searchHistory.map((search, index) => {
                       const response = responseHistory[index];
-                                      return (
+                      return (
                         <div key={`conversation-${search.timestamp}-${index}`}>
                           {/* User search bubble - right aligned */}
                           <div className="flex justify-end mb-2">
@@ -4404,7 +4461,7 @@ export default function App() {
                         />
                         <Input
                           type="text"
-                          placeholder="Ich suche ein Höhle der Löw..."
+                          placeholder={isMobile ? "Produkt suchen..." : "Ich suche ein Höhle der Löw..."}
                           value={splitScreenSearchQuery}
                           onChange={(e) =>
                             setSplitScreenSearchQuery(
@@ -4472,7 +4529,7 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         <motion.button
                           onClick={handleSplitScreenSearch}
-                          className="px-6 py-2 h-11 rounded-xl transition-all duration-200 shadow-lg"
+                          className={`${isMobile ? 'w-11 h-11 rounded-xl flex items-center justify-center' : 'px-6 py-2 h-11 rounded-xl'} transition-all duration-200 shadow-lg`}
                           style={{
                             backgroundColor: "#19535F",
                             color: "#FCFDFE",
@@ -4486,7 +4543,8 @@ export default function App() {
                               "#19535F";
                           }}
                         >
-                          Suchen
+                          <Search className="w-5 h-5 xl:hidden" />
+                          <span className="hidden xl:block">Suchen</span>
                         </motion.button>
 
                         {/* Image upload button */}
@@ -4498,7 +4556,7 @@ export default function App() {
                               )
                               ?.click()
                           }
-                          className="flex items-center gap-2 px-6 py-2 h-11 rounded-xl transition-all duration-200"
+                          className={`${isMobile ? 'w-11 h-11 rounded-xl flex items-center justify-center' : 'flex items-center gap-2 px-6 py-2 h-11 rounded-xl'} transition-all duration-200`}
                           style={{
                             backgroundColor: "#FCFDFE",
                             color: "#6B7280",
@@ -4512,12 +4570,10 @@ export default function App() {
                               "#FCFDFE";
                           }}
                         >
-                          <>
-                            <Upload className="w-4 h-4" />
-                            <span className="text-sm hidden">
-                              Bild hochladen
-                            </span>
-                          </>
+                          <Upload className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+                          <span className="hidden xl:block text-sm">
+                            Bild hochladen
+                          </span>
                         </motion.button>
                         <input
                           id="split-screen-image-upload"
@@ -4536,7 +4592,11 @@ export default function App() {
             {/* Right side - Result Window */}
             <motion.div
               key={`results-panel-${showProductSearch ? 'with' : 'without'}-search`}
-              className={`${showProductSearch ? "w-2/3" : "w-full"} h-full rounded-2xl flex flex-col relative z-[100]`}
+              className={`${
+                isMobile 
+                  ? 'w-full h-full' 
+                  : showProductSearch ? "md:w-2/3 lg:w-2/3 ipad-mini-products" : "w-full"
+              } h-full ${isMobile ? 'rounded-lg' : 'rounded-2xl'} flex flex-col relative z-[100]`}
               style={{
                 backgroundColor: "#FCFDFE",
                 opacity: 1.0,
@@ -4555,7 +4615,7 @@ export default function App() {
               }}
             >
               <div
-                className="p-6"
+                className={`${isMobile ? 'px-4 py-4' : 'p-6'}`}
                 style={{
                   borderBottomColor: "rgba(252, 253, 254, 0.3)",
                   borderBottomWidth: "1px",
@@ -5177,7 +5237,7 @@ export default function App() {
                 )}
               </div>
 
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex-1 p-4 overflow-y-auto">
                 {isLoading ? (
                   <>
                     <div className="space-y-4">
@@ -5284,21 +5344,21 @@ export default function App() {
                         `für "${currentSearchTerm}"`}
                     </div>
 
-                    {/* Grid View - Always shown */}
-                    <div className={`grid gap-3 ${showProductSearch ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'}`}>
-                        {filteredProducts.map(
-                          (product, index) => (
-                            <motion.div
-                              key={product.id}
-                              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{
-                                duration: 0.4,
-                                delay: index * 0.1,
-                              }}
-                              whileHover={{ scale: 1.03 }}
-                            >
+                    {isMobile || isTabletPortrait ? (
+                      /* Mobile & Tablet Portrait: Card View */
+                      <div className="grid gap-4 grid-cols-1">
+                        {filteredProducts.map((product, index) => (
+                          <motion.div
+                            key={product.id}
+                            className={`bg-white ${isMobile ? 'rounded-lg' : 'rounded-2xl'} shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                              duration: 0.4,
+                              delay: index * 0.1,
+                            }}
+                            whileHover={{ scale: 1.03 }}
+                          >
                               {/* Hero Image with Overlays */}
                               <div className="relative aspect-[4/3] w-full">
                                 <ImageWithFallback
@@ -5332,7 +5392,7 @@ export default function App() {
                               </div>
 
                               {/* Content Section */}
-                              <div className="p-5">
+                              <div className={`${isMobile ? 'p-3' : isTabletPortrait ? 'p-4' : 'p-5'}`}>
                                 {/* Title */}
                                 <div className="mb-3">
                                   <h3 className="text-xl font-semibold text-gray-900 line-clamp-1">
@@ -5397,11 +5457,110 @@ export default function App() {
                                 </div>
                               </div>
                             </motion.div>
-                          ),
-                        )}
+                        ))}
                       </div>
+                    ) : (
+                      /* Tablet Landscape & Desktop: List View */
+                      <div className="space-y-4">
+                        {filteredProducts.map((product, index) => (
+                          <motion.div
+                            key={product.id}
+                            className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 flex"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                              duration: 0.4,
+                              delay: index * 0.1,
+                            }}
+                            whileHover={{ scale: 1.01 }}
+                          >
+                            {/* Image */}
+                            <div className="relative w-48 h-32 flex-shrink-0">
+                              <ImageWithFallback
+                                src={product.image}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                              {/* Category Tag */}
+                              <div className="absolute top-2 left-2">
+                                <span 
+                                  className="px-2 py-1 text-white text-xs font-medium rounded-full"
+                                  style={{ backgroundColor: "#19535F" }}
+                                >
+                                  {product.category}
+                                </span>
+                              </div>
+                            </div>
 
-                      {currentSearchTerm !== "Alle Produkte" && (
+                            {/* Content */}
+                            <div className="flex-1 p-4 flex justify-between">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                  {product.name}
+                                </h3>
+                                
+                                <div className="flex items-center gap-2 mb-2 text-sm text-gray-500">
+                                  <span>{product.season}</span>
+                                  {(product as any).episode && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{(product as any).episode}</span>
+                                    </>
+                                  )}
+                                </div>
+
+                                <div className="mb-2 text-sm text-gray-500">
+                                  <span>Investor: </span>
+                                  <span className="font-medium">{product.investor}</span>
+                                </div>
+
+                                <p className="text-gray-600 text-sm line-clamp-2">
+                                  {product.description}
+                                </p>
+                              </div>
+
+                              {/* Price and Button */}
+                              <div className="flex flex-col items-end justify-between ml-4">
+                                <div className="text-right">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-lg font-semibold text-gray-900">
+                                      {product.price} €
+                                    </span>
+                                    {product.originalPrice && (
+                                      <span className="text-sm text-gray-400 line-through">
+                                        {product.originalPrice} €
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <motion.button
+                                  className={`px-4 py-2 text-sm font-medium rounded-full transition-colors duration-200 flex items-center gap-2 ${
+                                    (product as any).product_url || (product as any).url 
+                                      ? 'bg-black text-white hover:bg-gray-800 cursor-pointer' 
+                                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  }`}
+                                  whileHover={(product as any).product_url || (product as any).url ? { scale: 1.05 } : {}}
+                                  whileTap={(product as any).product_url || (product as any).url ? { scale: 0.95 } : {}}
+                                  onClick={() => {
+                                    const url = (product as any).product_url || (product as any).url;
+                                    if (url) {
+                                      window.open(url, '_blank');
+                                    }
+                                  }}
+                                  disabled={!((product as any).product_url || (product as any).url)}
+                                >
+                                  {(product as any).product_url || (product as any).url ? 'Jetzt kaufen' : 'Nicht verfügbar'}
+                                  <ExternalLink className="w-4 h-4" />
+                                </motion.button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+
+                    {currentSearchTerm !== "Alle Produkte" && (
                         <div className="mt-6 text-center">
                           <motion.button
                             onClick={handleAllProductsClick}
@@ -5712,6 +5871,25 @@ export default function App() {
             </div>
           </motion.div>
         </motion.div>
+      )}
+
+      {/* Permanent bottom button for mobile - only show when split screen is active and chat is closed */}
+      {isMobile && showSplitScreen && !isChatOpen && (
+        <motion.button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-4 right-4 z-[1001] w-14 h-14 rounded-full shadow-lg backdrop-blur-lg flex items-center justify-center"
+          style={{
+            backgroundColor: "#19535F",
+            color: "#FCFDFE",
+          }}
+          initial={{ opacity: 0, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Search className="w-6 h-6" />
+        </motion.button>
       )}
     </div>
   );
