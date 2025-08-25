@@ -2175,7 +2175,7 @@ export default function App() {
                   />
                   <Input
                     type="text"
-                    placeholder={isMobile ? "Produkt suchen..." : "Ich suche ein Höhle der Löwen-Produkt ..."}
+                    placeholder="Produkt suchen ..."
                     value={searchQuery}
                     onChange={(e) =>
                       setSearchQuery(e.target.value)
@@ -4461,7 +4461,7 @@ export default function App() {
                         />
                         <Input
                           type="text"
-                          placeholder={isMobile ? "Produkt suchen..." : "Ich suche ein Höhle der Löw..."}
+                          placeholder="Produkt suchen ..."
                           value={splitScreenSearchQuery}
                           onChange={(e) =>
                             setSplitScreenSearchQuery(
