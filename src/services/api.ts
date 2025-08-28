@@ -49,9 +49,13 @@ export interface SearchRequest {
   chat_id?: string | null;
   use_async?: boolean | null;
   hasImage?: boolean | null;
+  limit?: number | null;
+  count?: number | null;
+  max_results?: number | null;
+  size?: number | null;
 }
 
-const API_BASE_URL = 'http://dummy.whattheweb.de';
+const API_BASE_URL = import.meta.env.DEV ? '' : 'https://search-a.shop';
 
 export class ApiService {
   private sessionId: string;
@@ -101,8 +105,17 @@ export class ApiService {
     }
   }
 
-  async searchByText(text: string, minScore: number = 0): Promise<ApiSearchResponse> {
-    const response = await this.searchMultimodal({ text });
+  async searchByText(text: string, minScore: number = 0, limit?: number): Promise<ApiSearchResponse> {
+    const request: SearchRequest = { 
+      text,
+      // Test multiple possible parameter names for result limit
+      limit: limit || 25,
+      count: limit || 25, 
+      max_results: limit || 25,
+      size: limit || 25
+    };
+    
+    const response = await this.searchMultimodal(request);
     
     // Filter results by minimum score if specified
     if (minScore > 0 && response.results) {

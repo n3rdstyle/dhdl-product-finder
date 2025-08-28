@@ -756,6 +756,9 @@ export default function App() {
     useState<typeof dummyProducts>([]);
   const [originalSearchResults, setOriginalSearchResults] =
     useState<typeof dummyProducts>([]);
+  const [allProductsCache, setAllProductsCache] = 
+    useState<typeof dummyProducts | null>(null);
+  const [allProductsLoaded, setAllProductsLoaded] = useState(false);
   const [currentSearchTerm, setCurrentSearchTerm] =
     useState("");
   const [searchHistory, setSearchHistory] = useState<Array<{
@@ -886,8 +889,34 @@ export default function App() {
     return () => window.removeEventListener('resize', checkViewportType);
   }, []);
 
+  // Format investor display based on number of investors
+  const formatInvestorDisplay = (investorString: string): string => {
+    if (!investorString) return "";
+    
+    // Split by common separators (& and ,)
+    const investors = investorString
+      .split(/[&,]+/)
+      .map(inv => inv.trim())
+      .filter(inv => inv.length > 0);
+    
+    const count = investors.length;
+    
+    if (count === 0) return "";
+    if (count === 1) return `Investor: ${investors[0]}`;
+    if (count === 2) return `Investors: ${investors[0]} & ${investors[1]}`;
+    if (count === 3) return `Investors: ${investors[0]}, ${investors[1]} & ${investors[2]}`;
+    
+    // More than 3 investors
+    return `Investors: u.a. ${investors[0]}, ${investors[1]} & ${investors[2]}`;
+  };
+
   const handleSearch = async () => {
     if (searchQuery.trim() || selectedImage) {
+      // Load all products if not already loaded (for first search)
+      if (!allProductsCache) {
+        await loadAllProducts();
+      }
+
       setSearchMethod(selectedImage ? "image" : "text");
       const searchTerm = searchQuery || selectedImage?.name || "";
       setCurrentSearchTerm(searchTerm);
@@ -1074,27 +1103,44 @@ export default function App() {
   };
 
   const handleAllProductsClick = async () => {
+    console.log('🟡 handleAllProductsClick - cache exists:', !!allProductsCache, 'cache length:', allProductsCache?.length);
+    
     setCurrentSearchTerm("Alle Produkte");
     setSearchMethod("text");
     setShowSplitScreen(true);
     setShowProductSearch(false);
-    setIsLoading(true);
+    
+    // Load all products if not already loaded
+    if (!allProductsCache && !allProductsLoaded) {
+      console.log('🔵 Cache not available, loading all products...');
+      await loadAllProducts();
+      // After loading, the cache is set but we need to wait for the next render
+      // So we'll exit here and let the useEffect below handle setting filteredProducts
+      return;
+    }
 
-    try {
-      // Try API search for all DHDL products
-      const apiResponse = await apiService.searchByText("Höhle der Löwen Produkte alle");
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        setFilteredProducts(mappedProducts);
-      } else {
+    // Show all cached products if available
+    if (allProductsCache) {
+      console.log('🟢 Setting filtered products from cache, count:', allProductsCache.length);
+      setFilteredProducts(allProductsCache);
+    } else {
+      // Fallback to API search
+      setIsLoading(true);
+      try {
+        const apiResponse = await apiService.searchByText("Höhle der Löwen Produkte alle");
+        
+        if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
+          const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
+          setFilteredProducts(mappedProducts);
+        } else {
+          setFilteredProducts([]);
+        }
+      } catch (error) {
+        console.error('All products search error:', error);
         setFilteredProducts([]);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('All products search error:', error);
-      setFilteredProducts([]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -1178,6 +1224,154 @@ export default function App() {
   // Get current available options
   const currentAvailableOptions = getAvailableOptionsFromProducts();
 
+  // Extract brand name from product title (handles prefixed brand names)
+  const extractBrandFromProductName = (productName: string): string | null => {
+    const productLower = productName.toLowerCase().trim();
+    
+    // First check for brand prefix format "Brand – Product" and normalize the brand name
+    if (productName.includes(' – ')) {
+      const brandPart = productName.split(' – ')[0].trim().toLowerCase();
+      
+      // Normalize brand names to consistent format
+      if (brandPart.includes('fyta')) return 'FYTA';
+      if (brandPart.includes('aerostiletto')) return 'Aerostiletto';
+      if (brandPart.includes('dogs-guard') || brandPart.includes('dogs guard')) return 'Dogs-Guard';
+      if (brandPart.includes('anuux')) return 'ANUUX';
+      if (brandPart.includes('zoltra')) return 'Zoltra Sports';
+      
+      // Return the original brand part if no normalization needed
+      return productName.split(' – ')[0].trim();
+    }
+    
+    // For products without prefix, check content and normalize
+    // FYTA products (any case variations)
+    if (productLower.includes('fyta') || 
+        productLower.includes('beam gen') || 
+        productLower.includes('grove set') || 
+        productLower.includes('wlan hub')) {
+      return 'FYTA';
+    }
+    
+    // Aerostiletto products  
+    if (productLower.includes('aerostiletto')) {
+      return 'Aerostiletto';  
+    }
+    
+    // Dogs-Guard products
+    if (productLower.includes('dogs-guard') || productLower.includes('dogs guard') || productLower.includes('hundegeschirr')) {
+      return 'Dogs-Guard';
+    }
+    
+    // ANUUX products
+    if (productLower.includes('anuux') || productLower.includes('kapseln')) {
+      return 'ANUUX';
+    }
+    
+    // Zoltra Sports products
+    if (productLower.includes('zoltra') || productLower.includes('grip') || productLower.includes('fußball socke') || productLower.includes('pickup faszientrainer') || productLower.includes('partner-bundle') || productLower.includes('sorglos-bundle') || productLower.includes('cleaning kit') || productLower.includes('grip walk')) {
+      return 'Zoltra Sports';
+    }
+    
+    // Other brands
+    if (productLower.includes('bee cream')) {
+      return 'Bee Cream';
+    }
+    if (productLower.includes('nailmatic')) {
+      return 'Nailmatic';
+    }
+    
+    return null;
+  };
+
+  // Load all products once when leaving home screen
+  const loadAllProducts = async () => {
+    console.log('🔵 loadAllProducts called - allProductsLoaded:', allProductsLoaded, 'allProductsCache:', !!allProductsCache);
+    if (allProductsLoaded || allProductsCache) return; // Already loaded
+    
+    console.log('🟢 Starting multi-query product loading...');
+    setIsLoading(true);
+    try {
+      // Strategic multi-query approach to maximize product coverage
+      // 6 targeted queries to capture different product segments
+      const searchQueries = [
+        "Höhle der Löwen",                                    // Core DHDL products
+        "Zoltra Aerostiletto Dogs-Guard ANUUX FYTA",        // Brand-focused 1
+        "Bee Cream Nailmatic Staffel 17 Staffel 16",        // Brand-focused 2 + recent episodes  
+        "Innovation Startup Produkt Deutschland Erfindung",  // Category-focused
+        "Investor Deal Carsten Maschmeyer Judith Williams",  // Investor-focused
+        "Ralf Dümmel Dagmar Wöhrl Nils Glagau Investment"   // Additional investors
+      ];
+      
+      const allProducts = new Map<string, any>(); // Use Map to deduplicate by product name
+      
+      // Execute searches in parallel for better performance
+      // Try requesting 25 results per query to bypass the 15-result limitation
+      const searchPromises = searchQueries.map(query => 
+        apiService.searchByText(query, 0, 25).catch(error => {
+          console.warn(`Search failed for "${query}":`, error);
+          return null;
+        })
+      );
+      
+      const apiResponses = await Promise.all(searchPromises);
+      
+      // Collect all unique products from all searches
+      apiResponses.forEach((apiResponse, index) => {
+        if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
+          console.log(`Query "${searchQueries[index]}" returned ${apiResponse.results.length} results`);
+          
+          apiResponse.results.forEach(result => {
+            const productName = result.payload.name;
+            if (!allProducts.has(productName)) {
+              allProducts.set(productName, result);
+            }
+          });
+        }
+      });
+      
+      console.log(`Total unique products found: ${allProducts.size}`);
+      
+      if (allProducts.size > 0) {
+        const mappedProducts = ProductMapper.mapApiProductsToDummy(Array.from(allProducts.values()));
+        console.log('🔴 Setting cache with products:', mappedProducts.length, 'products');
+        setAllProductsCache(mappedProducts);
+        setAllProductsLoaded(true);
+        
+        // Extract metadata from loaded products
+        const staffelnSet = new Set<string>();
+        const investorenSet = new Set<string>();
+        const kategorienSet = new Set<string>();
+        const markenSet = new Set<string>();
+        
+        mappedProducts.forEach(product => {
+          if (product.season) staffelnSet.add(product.season);
+          if (product.investor) investorenSet.add(product.investor);
+          if (product.category) kategorienSet.add(product.category);
+          
+          // Extract actual brand name from product name
+          if (product.name) {
+            const brandName = extractBrandFromProductName(product.name);
+            if (brandName) {
+              markenSet.add(brandName);
+            }
+          }
+        });
+        
+        // Update available options based on actual products
+        setAvailableStaffeln(Array.from(staffelnSet).sort());
+        setAvailableInvestoren(Array.from(investorenSet).sort());
+        setAvailableKategorien(Array.from(kategorienSet).sort());
+        setAvailableMarken(Array.from(markenSet).sort());
+        
+        console.log(`Loaded metadata: ${staffelnSet.size} seasons, ${investorenSet.size} investors, ${kategorienSet.size} categories, ${markenSet.size} brands`);
+      }
+    } catch (error) {
+      console.error('Error loading all products:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Fetch available staffeln from API
   const fetchAvailableStaffeln = async () => {
     try {
@@ -1212,25 +1406,11 @@ export default function App() {
   // Fetch available investors from API
   const fetchAvailableInvestoren = async () => {
     try {
-      const apiResponse = await apiService.searchByText("Höhle der Löwen alle Investoren Produkte");
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        // Map API products to get investors (they are assigned during mapping)
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        const investorenSet = new Set<string>();
-        
-        mappedProducts.forEach(product => {
-          if (product.investor) {
-            investorenSet.add(product.investor);
-          }
-        });
-        
-        const investorenArray = Array.from(investorenSet).sort();
-        setAvailableInvestoren(investorenArray);
-      }
+      // For initial metadata, just use hardcoded investors since API doesn't provide this data
+      // The real investor data will come from loadAllProducts when products are mapped
+      setAvailableInvestoren(["Judith Williams", "Carsten Maschmeyer", "Jana Ensthaler", "Nils Glagau", "Dagmar Wöhrl", "Ralf Dümmel"]);
     } catch (error) {
       console.error('Error fetching available investors:', error);
-      // Fallback to default investors if API fails
       setAvailableInvestoren(["Judith Williams", "Carsten Maschmeyer", "Nils Glagau"]);
     }
   };
@@ -1284,11 +1464,22 @@ export default function App() {
 
   // Load available data on component mount
   useEffect(() => {
+    console.log('🔷 Initial mount - fetching metadata...');
     fetchAvailableStaffeln();
     fetchAvailableInvestoren();
-    fetchAvailableKategorien();
+    // Don't fetch categories - they come from products which don't have category data in API
+    // fetchAvailableKategorien();
     fetchAvailableMarken();
+    console.log('🔶 Available categories on mount:', availableKategorien);
   }, []);
+
+  // Update filtered products when cache is loaded and we're showing "Alle Produkte"
+  useEffect(() => {
+    if (allProductsCache && currentSearchTerm === "Alle Produkte") {
+      console.log('📌 Cache updated, showing all products:', allProductsCache.length);
+      setFilteredProducts(allProductsCache);
+    }
+  }, [allProductsCache, currentSearchTerm]);
 
   // Helper functions to get unique values from products
   const getAvailableStaffeln = () => {
@@ -1395,27 +1586,41 @@ export default function App() {
   };
 
   const handleMarkenClick = async (marke: string) => {
+    // Load all products if not already loaded
+    if (!allProductsCache) {
+      await loadAllProducts();
+    }
+
     setCurrentSearchTerm(`Marke: ${marke}`);
     setSearchMethod("text");
     setShowSplitScreen(true);
     setShowProductSearch(false);
     setDropdowns((prev) => ({ ...prev, marken: false }));
-    setIsLoading(true);
-
-    try {
-      const apiResponse = await apiService.searchByText(`${marke} Marke Produkt Höhle der Löwen`);
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        setFilteredProducts(mappedProducts);
-      } else {
+    
+    // Filter from cache if available
+    if (allProductsCache) {
+      const filtered = allProductsCache.filter(product => 
+        product.name.startsWith(`${marke} – `) || product.name.toLowerCase().includes(marke.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+    } else {
+      // Fallback to API if cache not available
+      setIsLoading(true);
+      try {
+        const apiResponse = await apiService.searchByText(`${marke} Marke Produkt Höhle der Löwen`);
+        
+        if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
+          const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
+          setFilteredProducts(mappedProducts);
+        } else {
+          setFilteredProducts([]);
+        }
+      } catch (error) {
+        console.error('Brand search error:', error);
         setFilteredProducts([]);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Brand search error:', error);
-      setFilteredProducts([]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -2803,7 +3008,8 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Kategorien Dropdown */}
+                {/* Kategorien Dropdown - only show if categories are available */}
+                {availableKategorien.length > 0 && (
                 <div className="relative">
                   <button
                     onClick={(e) => {
@@ -2858,6 +3064,7 @@ export default function App() {
                     </motion.div>
                   )}
                 </div>
+                )}
 
                 {/* Marken Dropdown */}
                 <div className="relative">
@@ -3374,7 +3581,8 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Kategorien Dropdown */}
+                {/* Kategorien Dropdown - only show if categories are available */}
+                {availableKategorien.length > 0 && (
                 <div className="relative">
                   <button
                     onClick={(e) => {
@@ -3429,6 +3637,7 @@ export default function App() {
                     </motion.div>
                   )}
                 </div>
+                )}
 
                 {/* Marken Dropdown */}
                 <div className="relative">
@@ -4133,7 +4342,8 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Kategorien Dropdown */}
+                {/* Kategorien Dropdown - only show if categories are available */}
+                {availableKategorien.length > 0 && (
                 <div className="relative">
                   <button
                     onClick={(e) => {
@@ -4188,6 +4398,7 @@ export default function App() {
                     </motion.div>
                   )}
                 </div>
+                )}
 
                 {/* Marken Dropdown */}
                 <div className="relative">
@@ -5413,8 +5624,7 @@ export default function App() {
 
                                 {/* Meta Information */}
                                 <div className="mb-3 text-sm text-gray-500">
-                                  <span>Investor: </span>
-                                  <span className="font-medium">{product.investor}</span>
+                                  <span className="font-medium">{formatInvestorDisplay(product.investor)}</span>
                                 </div>
 
                                 {/* Description */}
@@ -5510,8 +5720,7 @@ export default function App() {
                                 </div>
 
                                 <div className="mb-2 text-sm text-gray-500">
-                                  <span>Investor: </span>
-                                  <span className="font-medium">{product.investor}</span>
+                                  <span className="font-medium">{formatInvestorDisplay(product.investor)}</span>
                                 </div>
 
                                 <p className="text-gray-600 text-sm line-clamp-2">
