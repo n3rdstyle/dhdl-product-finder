@@ -135,22 +135,9 @@ export class ProductMapper {
       return 'Mode & Accessoires';
     }
     
-    // FYTA brand needs sub-categorization based on product type
+    // FYTA brand - all products are plant trackers and belong to Home & Garden
     if (name.includes('fyta')) {
-      // FYTA plant sensors go to Home & Garden
-      if (combined.includes('soil moisture') || combined.includes('plant care') || 
-          combined.includes('beam gen 2') || combined.includes('grow lights') ||
-          combined.includes('plant growth') || combined.includes('photosynthesis')) {
-        return 'Heim & Garten';
-      }
-      // FYTA lighting products go to Smart Home
-      if (combined.includes('smart lighting') || combined.includes('led bulbs') || 
-          combined.includes('wireless control') || combined.includes('home automation') ||
-          combined.includes('mood lighting') || combined.includes('dimmable')) {
-        return 'Smart Home & Technologie';
-      }
-      // Default FYTA to Smart Home if unclear
-      return 'Smart Home & Technologie';
+      return 'Heim & Garten';
     }
     
     // Specific product overrides for edge cases

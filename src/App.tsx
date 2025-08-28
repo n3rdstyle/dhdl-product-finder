@@ -911,6 +911,472 @@ export default function App() {
     return `Investors: u.a. ${investors[0]}, ${investors[1]} & ${investors[2]}`;
   };
 
+  // Comprehensive brand context for enhanced semantic search (from Material/Brand-Context)
+  const brandContext = {
+    "Zoltra Sports": {
+      overview: "entwickelt handgefertigte anti-rutsch-einlegesohlen ergänzendes zubehör stabilität erhöhen blasen vermeiden performance fußball wandern vielseitigem training verbessern sportler mitentwickelt deutschland gefertigt langlebige materialien komfort verletzungsprävention",
+      problems: [
+        'blasen', 'blase', 'blasenbildung', 'rutsch', 'rutschen', 'verrutsch', 'verrutschen', 'instabil', 'instabilität', 
+        'unsicher', 'unsicherheit', 'fußball training', 'wandern blasen', 'schuh verrutsch', 'keine kontrolle', 
+        'beschleunigung', 'richtungswechsel', 'gelenkbelastung', 'verheddern', 'schneller schuhwechsel',
+        'fußball spielen', 'wandern gehen', 'training machen', 'sport treiben', 'laufen'
+      ],
+      solutions: [
+        'anti-rutsch', 'grip', 'stabilität', 'halt', 'kontrolle', 'blasenschutz', 'fußbett', 'passform',
+        'ultraflach', 'grip-noppen', 'geformtes fußbett', 'langlebig', 'dämpfung', 'feuchtigkeitsregulierung',
+        'sicherer halt', 'auch bei nässe', 'schneller wechsel', 'deutschland herstellung'
+      ],
+      audience: [
+        'fußballspieler', 'fußballspielerin', 'wanderer', 'wandernde', 'alltags-sportler', 'freizeitsportler',
+        'sportler', 'athleten', 'trainer', 'hobby-sportler', 'aktive menschen'
+      ],
+      keyFeatures: [
+        'anti-rutsch-obermaterial auch bei nässe sicheren halt schuh',
+        'ultraflache grip-noppen geformtes fußbett stabile passform',
+        'langlebige verarbeitung schneller schuhwechsel möglich'
+      ],
+      products: [
+        'zoltra grip fußball football insole', 'zoltra grip allround', 'zoltra grip hiking wandern',
+        'starter-bundle hiking', 'sorglos-bundle hiking', 'partner-bundle hiking',
+        'zoltra wandersocken', 'recycelte edelstahl-trinkflasche', 'zoltra cleaning-kit',
+        'zoltra dry-bags drybag feuchtigkeitskissen', 'fußball socken', 'zoltra tape',
+        'faszienrolle classicroll', 'faszienrolle duoroll', 'pickup faszientrainer', 'performance ebook'
+      ],
+      madeIn: "deutschland"
+    },
+    "FYTA": {
+      overview: "entwickelt smarte pflanzenpflege-geräte app pflanzen-biometrie konkrete pflegeempfehlungen übersetzt system basiert fyta beam-sensoren optionalen wi-fi-hubs kontinuierliche synchronisation modularen sonden verschiedenen längen kuratierten bundles einzelne pflanzen urban jungle",
+      problems: [
+        'pflanze stirbt', 'pflanzen sterben', 'vertrocknet', 'verdorrt', 'zu viel wasser', 'zu wenig wasser',
+        'braune blätter', 'gelbe blätter', 'welk', 'welken', 'pflanzenpflege', 'gießen vergessen', 
+        'überwässert', 'unterwässert', 'zu wenig licht', 'zu viel licht', 'erde zu trocken', 'erde zu nass',
+        'pflanzen kümmern', 'indoor garten', 'zimmerpflanzen probleme', 'pflanzenpflege schwierig',
+        'wann gießen', 'wie viel wasser', 'standort falsch', 'düngen vergessen', 'salzgehalt falsch'
+      ],
+      solutions: [
+        'sensor', 'sensoren', 'überwachung', 'monitoring', 'automatisch', 'smart', 'intelligent',
+        'feuchte messung', 'salzgehalt messung', 'ec messung', 'licht messung', 'par messung', 
+        'temperatur messung', 'benachrichtigung', 'push-alerts', 'app', 'bluetooth', 'wi-fi',
+        'kontinuierliche überwachung', 'stündliche synchronisation', 'remote-benachrichtigungen',
+        'pflanzenpflege-tipps', 'pflegeempfehlungen', 'biometrie', 'wurzelzone überwachung'
+      ],
+      audience: [
+        'zimmerpflanzen-besitzer', 'zimmerpflanzen besitzer', 'indoor-gärtner', 'indoor gärtner',
+        'balkon-gärtner', 'balkon gärtner', 'hobby-gärtner', 'hobby gärtner', 'prosumer-pflanzenfans',
+        'pflanzenliebhaber', 'urban jungle', 'pflanzenpflege', 'grüner daumen'
+      ],
+      keyFeatures: [
+        'sensoren messen feuchte salzgehalt ec licht par temperatur app werden 11 kennwerte abgebildet',
+        'optionaler wi-fi-hub stündliche synchronisation remote-benachrichtigungen',
+        'modulare sondenlängen 3-35 cm skalierbares multi-sensor-setup'
+      ],
+      products: [
+        'fyta beam einzeln anpassbare sondenlänge', 'fyta wi-fi hub', '1 beam wi-fi hub starter kit',
+        '3 1 beams wifi hub', '5 1 beams wifi hub', '5 beams wi-fi hub', 
+        '10 beams wi-fi hub urban jungle bundle', 'fyta 2.0 grove set 1 beam 2.0',
+        'fyta beam 2.0 5x expansion set', 'fyta app kostenlos'
+      ],
+      sensorTypes: ['beam', 'beam 2.0', 'grove set', 'hub', 'wi-fi hub', 'sonden', 'multi-sensor']
+    },
+    "Anuux": {
+      overview: "bietet vegane nahrungsergänzungsmittel fokus ausgeglichene verdauung selbstsicherheit vereinfachte routinen rezeptur pflanzlich ohne tierische chemische zusätze online sowie ausgewählten apotheken stores verkauft",
+      problems: [
+        'verdauung', 'verdauungsprobleme', 'verdauungsbeschwerden', 'bauch', 'bauchschmerzen',
+        'darm', 'darmprobleme', 'unwohlsein', 'digestive', 'verdauungs-support', 'magen-darm',
+        'blähungen', 'verstopfung', 'durchfall', 'reizdarm', 'verdauungsstörung'
+      ],
+      solutions: [
+        'nahrungsergänzung', 'nahrungsergänzungsmittel', 'supplement', 'supplements', 
+        'vegan', 'pflanzlich', 'natürlich', 'ausgewogen', 'ausgeglichene verdauung',
+        'routine', 'vereinfacht', 'selbstsicherheit', 'transparente zutaten',
+        'lokal hergestellt', 'ohne tierische zusätze', 'ohne chemische zusätze'
+      ],
+      audience: [
+        'erwachsene', 'erwachsene menschen', 'verdauungs-support wunsch', 'pflanzenbasierte nutzer',
+        'vegane nutzer', 'veganer', 'vegetarier', 'gesundheitsbewusste', 'supplement nutzer'
+      ],
+      keyFeatures: [
+        'vegan lokal hergestellt transparente zutaten',
+        'empfohlene einnahme 3 kapseln morgens 3 abends mit wasser',
+        'diskreter versand hinweise anwendung kombination prep einnahmen zeitlich trennen'
+      ],
+      products: [
+        'anuux 90 kapseln probiergröße', 'anuux 180 kapseln 1 monatsdose', 'anuux 540 kapseln 3 monatsbeutel'
+      ],
+      dosage: "3 kapseln morgens 3 abends mit wasser",
+      additionalInfo: "faq behandelt dosierung wirkungseintritt 3 tage individuell stellt klar kein abführmittel außerdem kompatibel prep 2-stündigem einnahmeabstand"
+    },
+    "Dogs-Guard": {
+      overview: "vertreibt patentiertes leinenführungs-add-on dogs-guard leine über rücken hundes führt verheddern minimiert hunden ermöglicht kleineren verwicklungen selbst befreien extra-breite reflektierende gurte erhöhen sichtbarkeit innovative beinschlaufen erschweren entkommen geschirr deutlich",
+      problems: [
+        'hund verheddert', 'hund verheddert sich', 'leine verheddert', 'leine verwickelt', 'verwickelt', 'verwicklung',
+        'hund entkommen', 'hund entkommt', 'geschirr entkommen', 'leinenführung', 'leinenführung probleme',
+        'ziehen', 'hund zieht', 'leine zieht', 'verheddern', 'verheddert', 'leine verknotet',
+        'schleppleine verheddert', 'stadtleine probleme', 'gassi gehen probleme', 'leinenchaos'
+      ],
+      solutions: [
+        'leinenführung', 'leinenführungs-add-on', 'add-on', 'patentiert', 'rückenführung',
+        'anti-verheddert', 'anti-verheddern', 'selbst befreien', 'sicherheit', 'sicher',
+        'reflexion', 'reflektierend', 'sichtbarkeit', 'extra-breit', 'innovative beinschlaufen',
+        'leicht', 'atmungsaktiv', 'schnelltrocknend', 'hohe sichtbarkeit', 'über rücken führen'
+      ],
+      audience: [
+        'hundebesitzer', 'hundebesitzerin', 'hundehalter', 'hundemenschen', 'gassi gehen',
+        'stadtleinen nutzer', 'schleppleinen nutzer', 'geschirr nutzer', 'hunde training'
+      ],
+      keyFeatures: [
+        'add-on bestehende geschirre kein geschirr sich',
+        'leichtes atmungsaktives schnelltrocknendes material hoher sichtbarkeit',
+        'kompatibel kurzen leinen schleppleinen verschiedene größen schlaufenlängen'
+      ],
+      products: [
+        'dogs-guard leinenführungs-modul'
+      ],
+      sizes: ['xxs', 'xs', 's', 'm', 'l', 'xl', 'xxl'],
+      compatibility: "kein eigenständiges geschirr sondern add-on für bestehende geschirre"
+    },
+    "Aerostiletto": {
+      overview: "produziert komfort-pads high heels außen schuh angebracht effektive auftrittswinkel reduzieren vorfuß entlasten geeignet hochzeiten events büro alltag",
+      problems: [
+        'high heels schmerzen', 'high heels schmerzhaft', 'absatz schmerz', 'absatzschmerzen',
+        'vorfuß schmerz', 'vorfußschmerzen', 'unbequeme schuhe', 'schuhe unbequem',
+        'high heels komfort', 'high heels bequemer', 'fußschmerzen', 'druckstellen',
+        'lange stehen schmerzen', 'event schuhe schmerzen', 'hochzeit schuhe', 'büro high heels'
+      ],
+      solutions: [
+        'komfort pad', 'komfort-pad', 'pads', 'entlastung', 'druckentlastung',
+        'winkel reduzierung', 'auftrittswinkel reduzierung', 'außenanbringung', 'außen anbringen',
+        'sofortiger komfort', 'unauffällig', 'wiederverwendbar', 'selbstklebend',
+        'beige', 'schwarz', 'dezent', 'diskret', 'innenpassform unverändert'
+      ],
+      audience: [
+        'high heel träger', 'high heel trägerin', 'absatz träger', 'event besucher',
+        'hochzeit gäste', 'büro arbeiter', 'geschäftsfrauen', 'elegante schuhe träger',
+        'alltag high heels', 'komfort suchende'
+      ],
+      keyFeatures: [
+        'pads werden außen schuh aufgeklebt sofortiger komfort ohne innenpassform verändern',
+        'unauffälliges wiederverwendbares konzept erhältlich beige oder schwarz sowie duo-pack',
+        'standardgröße eu 37-41 inkl schleifpapier vorbereitung nicht grobe sohlen geeignet'
+      ],
+      products: [
+        'aerostiletto high heel pads beige', 'aerostiletto high heel pads schwarz', 
+        'aerostiletto duo pack beige schwarz'
+      ],
+      sizes: "standardgröße eu 37-41",
+      colors: ['beige', 'schwarz'],
+      application: "außen am schuh mit schleifpapier vorbereitung"
+    }
+  };
+
+  // German word similarity and stemming
+  const getWordSimilarity = (word1: string, word2: string): number => {
+    if (word1 === word2) return 1.0;
+    
+    // German plural/singular patterns
+    const germanPatterns = [
+      // Common plural endings
+      { singular: 'e$', plural: 'en$' },     // Socke -> Socken
+      { singular: '$', plural: 'e$' },       // Schuh -> Schuhe  
+      { singular: '$', plural: 's$' },       // Auto -> Autos
+      { singular: 'er$', plural: 'er$' },    // Kinder -> Kinder (same)
+      { singular: 'um$', plural: 'a$' },     // Museum -> Musea
+      { singular: 'us$', plural: 'i$' },     // Radius -> Radii
+    ];
+    
+    // Check if words are plural/singular variants
+    for (const pattern of germanPatterns) {
+      const singularRegex = new RegExp(pattern.singular);
+      const pluralRegex = new RegExp(pattern.plural);
+      
+      // word1 singular, word2 plural
+      if (singularRegex.test(word1) && pluralRegex.test(word2)) {
+        const stem1 = word1.replace(singularRegex, '');
+        const stem2 = word2.replace(pluralRegex, '');
+        if (stem1 === stem2) return 0.9;
+      }
+      
+      // word1 plural, word2 singular  
+      if (pluralRegex.test(word1) && singularRegex.test(word2)) {
+        const stem1 = word1.replace(pluralRegex, '');
+        const stem2 = word2.replace(singularRegex, '');
+        if (stem1 === stem2) return 0.9;
+      }
+    }
+    
+    // Substring matching for compound words
+    if (word1.length > 3 && word2.length > 3) {
+      if (word1.includes(word2) || word2.includes(word1)) {
+        return 0.7;
+      }
+    }
+    
+    // Simple edit distance for typos
+    if (Math.abs(word1.length - word2.length) <= 2) {
+      const distance = getEditDistance(word1, word2);
+      const maxLen = Math.max(word1.length, word2.length);
+      const similarity = 1 - distance / maxLen;
+      if (similarity > 0.7) return similarity * 0.6;
+    }
+    
+    return 0;
+  };
+  
+  const getEditDistance = (str1: string, str2: string): number => {
+    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    
+    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+    
+    for (let j = 1; j <= str2.length; j++) {
+      for (let i = 1; i <= str1.length; i++) {
+        const substitutionCost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,        // deletion
+          matrix[j - 1][i] + 1,        // insertion
+          matrix[j - 1][i - 1] + substitutionCost  // substitution
+        );
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  };
+
+  // Enhanced local semantic search with German word similarity
+  const performLocalSemanticSearch = (query: string, products: any[]): any[] => {
+    const queryLower = query.toLowerCase().trim();
+    
+    // German stop words to filter out
+    const stopWords = new Set([
+      'ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr', 'der', 'die', 'das', 'den', 'dem', 'des',
+      'ein', 'eine', 'einer', 'eines', 'einem', 'einen', 'und', 'oder', 'aber', 'wenn', 'dann',
+      'als', 'wie', 'was', 'wo', 'wann', 'warum', 'wer', 'welche', 'welcher', 'welches',
+      'ist', 'sind', 'war', 'waren', 'haben', 'hat', 'hatte', 'hatten', 'werden', 'wird',
+      'wurde', 'wurden', 'sein', 'seine', 'seiner', 'seinem', 'seinen', 'ihre', 'ihrer', 'ihrem', 'ihren',
+      'mein', 'meine', 'meiner', 'meinem', 'meinen', 'dein', 'deine', 'deiner', 'deinem', 'deinen',
+      'mit', 'von', 'zu', 'auf', 'in', 'an', 'bei', 'nach', 'vor', 'über', 'unter', 'durch',
+      'für', 'gegen', 'ohne', 'um', 'aus', 'seit', 'bis', 'während', 'wegen', 'trotz',
+      'suche', 'suchen', 'finde', 'finden', 'möchte', 'mögen', 'will', 'wollen', 'kann', 'können',
+      'soll', 'sollen', 'muss', 'müssen', 'darf', 'dürfen', 'mag', 'brauche', 'brauchen',
+      'gibt', 'geben', 'macht', 'machen', 'kommt', 'kommen', 'geht', 'gehen', 'steht', 'stehen'
+    ]);
+    
+    // Filter out stop words but keep the full query for phrase matching
+    const queryWords = queryLower.split(/\s+/).filter(word => !stopWords.has(word));
+    
+    console.log(`🔍 Enhanced semantic search for: "${query}" (filtered words: ${queryWords.join(', ')})`);
+    console.log(`📦 Searching through ${products.length} products`);
+    
+    // Score each product based on relevance
+    const scoredProducts = products.map(product => {
+      let score = 0;
+      let matchReasons = [];
+      
+      // Get searchable fields
+      const name = (product.name || '').toLowerCase();
+      const description = (product.description || '').toLowerCase();
+      const tags = product.tags || [];
+      const tagsString = tags.join(' ').toLowerCase();
+      const category = (product.category || '').toLowerCase();
+      
+      // Exact name match (highest priority)
+      if (name.includes(queryLower)) {
+        score += 100;
+        matchReasons.push(`exact name match`);
+      }
+      
+      // Enhanced brand context matching with full semantic depth
+      Object.entries(brandContext).forEach(([brand, context]) => {
+        const brandLower = brand.toLowerCase();
+        
+        // Check if this product belongs to this brand
+        const isFromBrand = name.includes(brandLower.split(' ')[0]) || 
+                           description.includes(brandLower) ||
+                           tags.some((tag: string) => tag.toLowerCase().includes(brandLower.split(' ')[0]));
+        
+        if (isFromBrand) {
+          // Overview/general context matching (semantic background)
+          if (context.overview && queryWords.some(word => context.overview.includes(word))) {
+            score += 30;
+            matchReasons.push(`🏢 brand context match`);
+          }
+          
+          // Problem-solution matching (highest semantic value)
+          context.problems.forEach(problem => {
+            if (queryLower.includes(problem)) {
+              score += 120; // Higher than exact name match for problem-solution fit
+              matchReasons.push(`🎯 solves problem: "${problem}"`);
+            }
+          });
+          
+          // Solution keyword matching
+          context.solutions.forEach(solution => {
+            if (queryLower.includes(solution)) {
+              score += 80;
+              matchReasons.push(`✨ solution match: "${solution}"`);
+            }
+          });
+          
+          // Audience matching
+          context.audience.forEach(audience => {
+            if (queryLower.includes(audience)) {
+              score += 60;
+              matchReasons.push(`👥 audience match: "${audience}"`);
+            }
+          });
+          
+          // Product type matching - FIXED LOGIC
+          context.products.forEach(productType => {
+            // Only match if the product type is semantically relevant to the query
+            const productTypeRelevant = productType.toLowerCase().includes(queryLower);
+            const queryRelevant = queryLower.includes(productType.toLowerCase());
+            
+            if (productTypeRelevant || queryRelevant) {
+              score += 70;
+              matchReasons.push(`📦 product type: "${productType}"`);
+              console.log(`✅ FIXED: Query "${queryLower}" ↔ Product type "${productType}" (typeRelevant: ${productTypeRelevant}, queryRelevant: ${queryRelevant})`);
+            }
+          });
+          
+          // Key features matching (detailed product benefits)
+          if (context.keyFeatures) {
+            context.keyFeatures.forEach(feature => {
+              queryWords.forEach(word => {
+                if (feature.includes(word)) {
+                  score += 40;
+                  matchReasons.push(`🔧 feature match: "${word}"`);
+                }
+              });
+            });
+          }
+          
+          // Additional brand-specific attributes (with type safety)
+          if ((context as any).madeIn && queryLower.includes((context as any).madeIn)) {
+            score += 25;
+            matchReasons.push(`🇩🇪 made in: "${(context as any).madeIn}"`);
+          }
+          
+          if ((context as any).dosage && (queryLower.includes('dosierung') || queryLower.includes('einnahme'))) {
+            score += 35;
+            matchReasons.push(`💊 dosage info available`);
+          }
+          
+          if ((context as any).sizes && (queryLower.includes('größe') || queryLower.includes('size'))) {
+            score += 25;
+            matchReasons.push(`📏 size options available`);
+          }
+          
+          if ((context as any).colors && (context as any).colors.some((color: string) => queryLower.includes(color))) {
+            score += 30;
+            matchReasons.push(`🎨 color match`);
+          }
+          
+          if ((context as any).sensorTypes && (context as any).sensorTypes.some((sensor: string) => queryLower.includes(sensor))) {
+            score += 50;
+            matchReasons.push(`📡 sensor type match`);
+          }
+          
+          if ((context as any).compatibility && (queryLower.includes('kompatibel') || queryLower.includes('add-on'))) {
+            score += 45;
+            matchReasons.push(`🔗 compatibility info`);
+          }
+          
+          if ((context as any).application && (queryLower.includes('anwendung') || queryLower.includes('verwendung'))) {
+            score += 35;
+            matchReasons.push(`📋 application info`);
+          }
+        }
+      });
+      
+      // Enhanced keyword matching with German similarity
+      queryWords.forEach(queryWord => {
+        // Exact matches (highest priority)
+        if (name.includes(queryWord)) {
+          score += 50;
+          matchReasons.push(`🎯 exact name match: "${queryWord}"`);
+        }
+        
+        if (description.includes(queryWord)) {
+          score += 20;
+          matchReasons.push(`📝 exact description match: "${queryWord}"`);
+        }
+        
+        // Tag matching
+        if (tags.some((tag: string) => tag.toLowerCase() === queryWord)) {
+          score += 40;
+          matchReasons.push(`🏷️ exact tag match: "${queryWord}"`);
+        }
+        
+        if (tagsString.includes(queryWord)) {
+          score += 10;
+          matchReasons.push(`🏷️ tag contains: "${queryWord}"`);
+        }
+        
+        if (category.includes(queryWord)) {
+          score += 15;
+          matchReasons.push(`📂 category match: "${queryWord}"`);
+        }
+        
+        // Similarity matching for German words
+        const nameWords = name.split(/\s+/);
+        const descWords = description.split(/\s+/);
+        
+        nameWords.forEach(nameWord => {
+          const similarity = getWordSimilarity(queryWord, nameWord);
+          if (similarity > 0.7) {
+            const points = Math.round(50 * similarity);
+            score += points;
+            matchReasons.push(`🔄 name similarity "${queryWord}"↔"${nameWord}" (${similarity.toFixed(2)})`);
+          }
+        });
+        
+        descWords.forEach(descWord => {
+          const similarity = getWordSimilarity(queryWord, descWord);
+          if (similarity > 0.7) {
+            const points = Math.round(20 * similarity);
+            score += points;
+            matchReasons.push(`📄 desc similarity "${queryWord}"↔"${descWord}" (${similarity.toFixed(2)})`);
+          }
+        });
+        
+        // Tag similarity
+        tags.forEach((tag: string) => {
+          const tagWords = tag.toLowerCase().split(/\s+/);
+          tagWords.forEach(tagWord => {
+            const similarity = getWordSimilarity(queryWord, tagWord);
+            if (similarity > 0.7) {
+              const points = Math.round(40 * similarity);
+              score += points;
+              matchReasons.push(`🏷️ tag similarity "${queryWord}"↔"${tagWord}" (${similarity.toFixed(2)})`);
+            }
+          });
+        });
+      });
+      
+      // Note: Special semantic mappings removed - now handled by comprehensive brand context above
+      
+      if (score > 0 && matchReasons.length > 0) {
+        console.log(`📋 "${product.name}" (score: ${score}) - ${matchReasons.join(', ')}`);
+      }
+      
+      return { ...product, searchScore: score, matchReasons };
+    });
+    
+    // Filter out products with no relevance
+    const relevantProducts = scoredProducts.filter(p => p.searchScore > 0);
+    
+    // Sort by score (highest first)
+    relevantProducts.sort((a, b) => b.searchScore - a.searchScore);
+    
+    console.log(`📊 Enhanced semantic search results (${relevantProducts.length} total):`);
+    relevantProducts.slice(0, 10).forEach((p, i) => {
+      console.log(`  ${i + 1}. "${p.name}" (score: ${p.searchScore})`);
+    });
+    
+    // Return all relevant results (no artificial limit)
+    return relevantProducts;
+  };
+
   const handleSearch = async () => {
     if (searchQuery.trim() || selectedImage) {
       // Load all products if not already loaded (for first search)
@@ -957,15 +1423,35 @@ export default function App() {
         if (selectedImage && searchQuery.trim()) {
           // Combined search
           const imageBase64 = await apiService.convertFileToBase64(selectedImage);
-          apiResponse = await apiService.searchByTextAndImage(searchQuery.trim(), imageBase64, 0.5);
+          apiResponse = await apiService.searchByTextAndImage(searchQuery.trim(), imageBase64, 0.6);
         } else if (selectedImage) {
           // Image only search
           const imageBase64 = await apiService.convertFileToBase64(selectedImage);
-          apiResponse = await apiService.searchByImage(imageBase64, 0.4);
+          apiResponse = await apiService.searchByImage(imageBase64, 0.55);
         } else if (searchQuery.trim()) {
-          // Text only search with semantic enhancement
-          console.log(`🚀 Starting semantic search for: "${searchQuery.trim()}"`);
-          apiResponse = await SemanticSearchService.search(searchQuery.trim());
+          // Local semantic search through cached products
+          console.log(`🔍 Starting LOCAL semantic search for: "${searchQuery.trim()}"`);
+          
+          // Ensure products are loaded
+          let productsToSearch = allProductsCache;
+          if (!productsToSearch || productsToSearch.length === 0) {
+            console.log('📦 Loading all products for local search...');
+            productsToSearch = await loadAllProducts();
+          }
+          
+          if (productsToSearch && productsToSearch.length > 0) {
+            // Perform local semantic search
+            const searchResults = performLocalSemanticSearch(searchQuery.trim(), productsToSearch);
+            setFilteredProducts(searchResults);
+            setOriginalSearchResults(searchResults);
+            
+            // Skip API call - we're done with local search
+            return;
+          } else {
+            // Fallback to API if cache fails
+            console.log('⚠️ Cache empty, falling back to API search');
+            apiResponse = await SemanticSearchService.search(searchQuery.trim());
+          }
         }
 
         if (apiResponse && apiResponse.results) {
@@ -1684,11 +2170,21 @@ export default function App() {
 
 
 
-  // Load available data on component mount
+  // Load available data and all products on component mount
   useEffect(() => {
-    console.log('🔷 Initial mount - fetching metadata...');
+    console.log('🔷 Initial mount - fetching metadata and loading all products...');
     fetchAvailableInvestoren();
     console.log('🔶 Available categories on mount:', availableKategorien);
+    
+    // Load all products on initial mount (entering home screen for the first time)
+    if (!allProductsLoaded && !allProductsCache) {
+      console.log('🚀 Loading all products on initial mount...');
+      loadAllProducts().then(() => {
+        console.log('✅ All products loaded successfully on initial mount');
+      }).catch(error => {
+        console.error('❌ Error loading products on initial mount:', error);
+      });
+    }
   }, []);
 
   // Update filtered products when cache is loaded and we're showing "Alle Produkte"
@@ -2127,7 +2623,7 @@ export default function App() {
 
       try {
         const imageBase64 = await apiService.convertFileToBase64(selectedImage);
-        const apiResponse = await apiService.searchByImage(imageBase64);
+        const apiResponse = await apiService.searchByImage(imageBase64, 0.55);
         
         if (apiResponse && apiResponse.results) {
           const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
@@ -2190,7 +2686,7 @@ export default function App() {
 
       try {
         const imageBase64 = await apiService.convertFileToBase64(file);
-        const apiResponse = await apiService.searchByImage(imageBase64, 0.2);
+        const apiResponse = await apiService.searchByImage(imageBase64, 0.55);
         
         if (apiResponse && apiResponse.results) {
           const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
@@ -2289,7 +2785,7 @@ export default function App() {
 
       try {
         const imageBase64 = await apiService.convertFileToBase64(file);
-        const apiResponse = await apiService.searchByImage(imageBase64, 0.2);
+        const apiResponse = await apiService.searchByImage(imageBase64, 0.55);
         
         if (apiResponse && apiResponse.results) {
           const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
@@ -2458,23 +2954,32 @@ export default function App() {
       }
 
       try {
-        console.log(`🚀 Starting semantic split-screen search for: "${splitScreenSearchQuery.trim()}"`);
-        const apiResponse = await SemanticSearchService.search(splitScreenSearchQuery.trim());
+        // Use local semantic search (same as home screen)
+        console.log(`🔍 Starting LOCAL split-screen search for: "${splitScreenSearchQuery.trim()}"`);
         
-        if (apiResponse && apiResponse.results) {
-          const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-          setFilteredProducts(mappedProducts);
-          setOriginalSearchResults(mappedProducts);
+        // Ensure products are loaded
+        let productsToSearch = allProductsCache;
+        if (!productsToSearch || productsToSearch.length === 0) {
+          console.log('📦 Loading all products for split-screen search...');
+          productsToSearch = await loadAllProducts();
+        }
+        
+        if (productsToSearch && productsToSearch.length > 0) {
+          // Perform local semantic search
+          const searchResults = performLocalSemanticSearch(splitScreenSearchQuery.trim(), productsToSearch);
+          setFilteredProducts(searchResults);
+          setOriginalSearchResults(searchResults);
           
           // Update response history with result count
           setResponseHistory(prev => 
             prev.map((response, index) => 
               index === prev.length - 1 
-                ? { ...response, resultCount: mappedProducts.length, isLoading: false }
+                ? { ...response, resultCount: searchResults.length, isLoading: false }
                 : response
             )
           );
         } else {
+          // No products available
           setFilteredProducts([]);
           setOriginalSearchResults([]);
           
@@ -2847,7 +3352,7 @@ export default function App() {
                     <span className="hidden xl:block">Suchen</span>
                   </motion.button>
 
-                  {/* Image upload button */}
+                  {/* Image upload button - COMMENTED OUT
                   <motion.button
                     onClick={handleImageSearch}
                     className={`${isMobile ? 'w-11 h-11 rounded-xl flex items-center justify-center' : 'flex items-center gap-2 px-6 py-2 h-11 rounded-xl'} transition-all duration-200`}
@@ -2876,6 +3381,7 @@ export default function App() {
                     onChange={handleImageUpload}
                     className="hidden"
                   />
+                  */}
                 </div>
               </div>
             </div>
@@ -5126,7 +5632,7 @@ export default function App() {
                           <span className="hidden xl:block">Suchen</span>
                         </motion.button>
 
-                        {/* Image upload button */}
+                        {/* Image upload button - COMMENTED OUT
                         <motion.button
                           onClick={() =>
                             document
@@ -5161,6 +5667,7 @@ export default function App() {
                           onChange={handleImageUpload}
                           className="hidden"
                         />
+                        */}
                       </div>
                     </div>
                   </div>
@@ -5974,10 +6481,11 @@ export default function App() {
                                   <span className="font-medium">{formatInvestorDisplay(product.investor)}</span>
                                 </div>
 
-                                {/* Description */}
+                                {/* Description - HIDDEN
                                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                                   {product.description}
                                 </p>
+                                */}
 
                                 {/* Price and Button */}
                                 <div className="flex items-center justify-between">
@@ -6070,9 +6578,11 @@ export default function App() {
                                   <span className="font-medium">{formatInvestorDisplay(product.investor)}</span>
                                 </div>
 
+                                {/* Description - HIDDEN
                                 <p className="text-gray-600 text-sm line-clamp-2">
                                   {product.description}
                                 </p>
+                                */}
                               </div>
 
                               {/* Price and Button */}
