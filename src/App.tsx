@@ -15,6 +15,7 @@ import {
 import { Input } from "./components/ui/input";
 import { useState, useEffect, useRef } from "react";
 import { apiService } from "./services/api";
+import { SemanticSearchService } from "./services/semanticSearch";
 import { ProductMapper } from "./services/productMapper";
 import Component1739SendungslogoHoehleDerLoewen1 from "./imports/1739SendungslogoHoehleDerLoewen1";
 import { ImageWithFallback } from "./components/figma/ImageWithFallback";
@@ -962,9 +963,9 @@ export default function App() {
           const imageBase64 = await apiService.convertFileToBase64(selectedImage);
           apiResponse = await apiService.searchByImage(imageBase64, 0.4);
         } else if (searchQuery.trim()) {
-          // Text only search - use minimum score to filter irrelevant results
-          // Set a threshold of 0.5 to only show relevant results
-          apiResponse = await apiService.searchByText(searchQuery.trim(), 0.5);
+          // Text only search with semantic enhancement
+          console.log(`🚀 Starting semantic search for: "${searchQuery.trim()}"`);
+          apiResponse = await SemanticSearchService.search(searchQuery.trim());
         }
 
         if (apiResponse && apiResponse.results) {
@@ -1013,9 +1014,8 @@ export default function App() {
   };
 
   const handleCurrentSeasonClick = async () => {
-    // Get the current (most recent) season from available staffeln
     const currentSeason = availableStaffeln.length > 0 ? availableStaffeln[0] : "Staffel 17";
-    const seasonNumber = currentSeason.replace("Staffel ", "");
+    console.log(`🎯 Current Season clicked: "${currentSeason}" - using LOCAL filtering`);
     
     setCurrentSearchTerm(`Aktuelle Staffel (${currentSeason})`);
     setSearchMethod("text");
@@ -1024,17 +1024,31 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      // Search for current season products
-      const apiResponse = await apiService.searchByText(`Staffel ${seasonNumber} Höhle der Löwen aktuelle Produkte`);
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        setFilteredProducts(mappedProducts);
-      } else {
-        setFilteredProducts([]);
+      // Ensure all products are loaded first
+      if (!allProductsCache) {
+        console.log('🔵 No products cached, loading all products first...');
+        await loadAllProducts();
+        if (!allProductsCache) {
+          console.log('❌ Failed to load products for current season filtering');
+          setFilteredProducts([]);
+          setIsLoading(false);
+          return;
+        }
       }
+
+      console.log(`🔍 Filtering locally for current season: "${currentSeason}"`);
+      
+      // Filter locally from cached products
+      const filtered = allProductsCache.filter(product => {
+        const matches = product.season === currentSeason;
+        console.log(`🎯 "${product.name}": season="${product.season}", matches="${currentSeason}"? ${matches}`);
+        return matches;
+      });
+
+      console.log(`✅ Local current season filter results: ${filtered.length} products for "${currentSeason}"`);
+      setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Current season search error:', error);
+      console.error('Local current season filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -1042,35 +1056,78 @@ export default function App() {
   };
 
   const handleLastEpisodeClick = async () => {
-    setCurrentSearchTerm("Letzte Folge (Staffel 17, Folge 8)");
+    console.log(`🔴 LETZTE FOLGE BUTTON CLICKED!`);
+    console.log(`📺 Last Episode clicked - finding LATEST episode dynamically`);
+    
     setSearchMethod("text");
     setShowSplitScreen(true);
-    setShowProductSearch(true);
+    setShowProductSearch(false);
     setIsLoading(true);
 
     try {
-      // Search for Staffel 17, Folge 8 products (date: 23.06.2025)
-      const apiResponse = await apiService.searchByText("Höhle der Löwen Staffel 17 Folge 8 23.06.2025");
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        // Filter to only products from 23.06.2025
-        const lastEpisodeProducts = apiResponse.results.filter(
-          result => result.payload.datum === "23.06.2025"
-        );
+      // Ensure all products are loaded first
+      let productsToAnalyze = allProductsCache;
+      if (!productsToAnalyze) {
+        console.log('🔵 No products cached, loading all products first...');
+        productsToAnalyze = await loadAllProducts();
         
-        if (lastEpisodeProducts.length > 0) {
-          const mappedProducts = ProductMapper.mapApiProductsToDummy(lastEpisodeProducts);
-          setFilteredProducts(mappedProducts);
-        } else {
-          // Fallback to all results if date filtering returns nothing
-          const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-          setFilteredProducts(mappedProducts);
+        if (!productsToAnalyze) {
+          console.log('❌ Failed to load products for last episode filtering');
+          setFilteredProducts([]);
+          setIsLoading(false);
+          return;
         }
-      } else {
-        setFilteredProducts([]);
       }
+
+      // Find the latest episode dynamically
+      let latestSeason = 0;
+      let latestEpisode = 0;
+      let latestSeasonName = "";
+      
+      productsToAnalyze.forEach(product => {
+        // Extract season number
+        if (product.season) {
+          const seasonMatch = product.season.match(/Staffel (\d+)/i);
+          if (seasonMatch) {
+            const seasonNum = parseInt(seasonMatch[1]);
+            
+            // Extract episode number if available
+            const episodeInfo = (product as any).episode;
+            let episodeNum = 1; // Default episode
+            
+            if (episodeInfo) {
+              const episodeMatch = episodeInfo.toString().match(/(\d+)/);
+              if (episodeMatch) {
+                episodeNum = parseInt(episodeMatch[1]);
+              }
+            }
+            
+            // Check if this is later than our current latest
+            if (seasonNum > latestSeason || (seasonNum === latestSeason && episodeNum > latestEpisode)) {
+              latestSeason = seasonNum;
+              latestEpisode = episodeNum;
+              latestSeasonName = product.season;
+            }
+          }
+        }
+      });
+
+      const latestEpisodeText = `Staffel ${latestSeason}, Folge ${latestEpisode}`;
+      console.log(`🔍 Found latest episode: ${latestEpisodeText}`);
+      
+      setCurrentSearchTerm(`Letzte Folge (${latestEpisodeText})`);
+      
+      // Filter for products from the latest season (since episode data might be incomplete)
+      const filtered = productsToAnalyze.filter(product => {
+        const matches = product.season === latestSeasonName;
+        console.log(`📺 "${product.name}": season="${product.season}", matches latest="${latestSeasonName}"? ${matches}`);
+        return matches;
+      });
+
+      console.log(`✅ Local latest episode filter results: ${filtered.length} products from "${latestEpisodeText}"`);
+      setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Last episode search error:', error);
+      console.error('Local latest episode filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -1078,6 +1135,8 @@ export default function App() {
   };
 
   const handlePopularProductsClick = async () => {
+    console.log(`⭐ Popular Products clicked - using LOCAL filtering`);
+    
     setCurrentSearchTerm("Beliebte Produkte");
     setSearchMethod("text");
     setShowSplitScreen(true);
@@ -1085,17 +1144,37 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      // Try API search for popular products
-      const apiResponse = await apiService.searchByText("beliebte erfolgreiche Höhle der Löwen Produkte");
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        setFilteredProducts(mappedProducts.slice(0, 6)); // Show only 6 most relevant
-      } else {
-        setFilteredProducts([]);
+      // Ensure all products are loaded first
+      if (!allProductsCache) {
+        console.log('🔵 No products cached, loading all products first...');
+        await loadAllProducts();
+        if (!allProductsCache) {
+          console.log('❌ Failed to load products for popular filtering');
+          setFilteredProducts([]);
+          setIsLoading(false);
+          return;
+        }
       }
+
+      console.log(`🔍 Filtering locally for popular products`);
+      
+      // Sort by rating and reviews to find popular products
+      const filtered = [...allProductsCache]
+        .sort((a, b) => {
+          // Sort by rating first, then by reviews
+          if (b.rating !== a.rating) return b.rating - a.rating;
+          return b.reviews - a.reviews;
+        })
+        .slice(0, 6); // Show only 6 most popular
+
+      console.log(`✅ Local popular products filter results: ${filtered.length} popular products`);
+      filtered.forEach(product => {
+        console.log(`   ⭐ "${product.name}" (rating: ${product.rating}, reviews: ${product.reviews})`);
+      });
+      
+      setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Popular products search error:', error);
+      console.error('Local popular products filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -1145,6 +1224,8 @@ export default function App() {
   };
 
   const handleInvestorDealsClick = async () => {
+    console.log(`💼 Investor Deals clicked - using LOCAL filtering`);
+    
     setCurrentSearchTerm("Investoren-Deals");
     setSearchMethod("text");
     setShowSplitScreen(true);
@@ -1152,17 +1233,35 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      // Try API search for investor deals
-      const apiResponse = await apiService.searchByText("Höhle der Löwen Investoren Deals erfolgreiche Produkte");
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        setFilteredProducts(mappedProducts);
-      } else {
-        setFilteredProducts([]);
+      // Ensure all products are loaded first
+      if (!allProductsCache) {
+        console.log('🔵 No products cached, loading all products first...');
+        await loadAllProducts();
+        if (!allProductsCache) {
+          console.log('❌ Failed to load products for investor deals filtering');
+          setFilteredProducts([]);
+          setIsLoading(false);
+          return;
+        }
       }
+
+      console.log(`🔍 Filtering locally for investor deals (all products with known investors)`);
+      
+      // Filter for products that have an investor assigned
+      const filtered = allProductsCache.filter(product => {
+        const hasInvestor = product.investor && product.investor !== "" && product.investor !== "Unbekannt";
+        console.log(`💼 "${product.name}": investor="${product.investor}", hasInvestor? ${hasInvestor}`);
+        return hasInvestor;
+      });
+
+      console.log(`✅ Local investor deals filter results: ${filtered.length} products with investor deals`);
+      filtered.forEach(product => {
+        console.log(`   💼 "${product.name}" → Investor: ${product.investor}`);
+      });
+      
+      setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Investor deals search error:', error);
+      console.error('Local investor deals filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -1194,16 +1293,142 @@ export default function App() {
   const [availableKategorien, setAvailableKategorien] = useState<string[]>([]);
   const [availableMarken, setAvailableMarken] = useState<string[]>([]);
 
+  // Test category assignment function
+  const testCategoryAssignment = (product: any): string => {
+    const name = product.name?.toLowerCase() || '';
+    const description = product.description?.toLowerCase() || '';
+    const context = product.context?.toLowerCase() || '';
+    const combined = `${name} ${description} ${context}`;
+    
+    // Brand-based category assignment (highest priority)
+    if (name.includes('zoltra sports') || name.includes('zoltra')) {
+      // All Zoltra products are sport & fitness related
+      return 'Sport & Fitness';
+    }
+    if (name.includes('anuux')) {
+      // All ANUUX products are health supplements
+      return 'Gesundheit & Nahrungsergänzung';
+    }
+    if (name.includes('dogs-guard')) {
+      // All Dogs-Guard products are for pets
+      return 'Haustiere';
+    }
+    if (name.includes('aerostiletto')) {
+      // All Aerostiletto products are fashion accessories
+      return 'Mode & Accessoires';
+    }
+    
+    // FYTA brand needs sub-categorization based on product type
+    if (name.includes('fyta')) {
+      // FYTA plant sensors go to Home & Garden
+      if (combined.includes('soil moisture') || combined.includes('plant care') || 
+          combined.includes('beam gen 2') || combined.includes('grow lights') ||
+          combined.includes('plant growth') || combined.includes('photosynthesis')) {
+        return 'Heim & Garten';
+      }
+      // FYTA lighting products go to Smart Home
+      if (combined.includes('smart lighting') || combined.includes('led bulbs') || 
+          combined.includes('wireless control') || combined.includes('home automation') ||
+          combined.includes('mood lighting') || combined.includes('dimmable')) {
+        return 'Smart Home & Technologie';
+      }
+      // Default FYTA to Smart Home if unclear
+      return 'Smart Home & Technologie';
+    }
+    
+    // Specific product overrides for edge cases
+    if (name.includes('bee cream')) {
+      return 'Beauty & Pflege';
+    }
+    
+    // Health & Supplements
+    if (combined.includes('kapseln') || combined.includes('supplement') || 
+        combined.includes('nahrungsergänzung') || combined.includes('vitamin') ||
+        combined.includes('gesundheit') || combined.includes('dietary') ||
+        combined.includes('immune support') || combined.includes('energy boost')) {
+      return 'Gesundheit & Nahrungsergänzung';
+    }
+    
+    // Pets (before Smart Home to avoid conflicts)
+    if (combined.includes('hund') || combined.includes('haustier') || 
+        combined.includes('geschirr') || combined.includes('dogs-guard') ||
+        combined.includes('tier') || combined.includes('dog harness') ||
+        combined.includes('pet')) {
+      return 'Haustiere';
+    }
+    
+    // Smart Home & Technology (FYTA plant sensors)
+    if ((combined.includes('sensor') && combined.includes('plant')) || 
+        combined.includes('soil moisture') || combined.includes('plant care') ||
+        (name.includes('fyta') && combined.includes('beam gen'))) {
+      return 'Heim & Garten';
+    }
+    
+    // Smart Home & Technology (lighting and hubs)
+    if (combined.includes('smart lighting') || combined.includes('led bulbs') || 
+        combined.includes('wlan hub') || combined.includes('wi-fi hub') ||
+        combined.includes('wireless control') || combined.includes('home automation') ||
+        (combined.includes('beam') && combined.includes('lighting'))) {
+      return 'Smart Home & Technologie';
+    }
+    
+    // Services & Subscriptions (before Sports to catch bundles)
+    if (combined.includes('subscription') || combined.includes('streaming services') || 
+        combined.includes('digital content') || combined.includes('entertainment access') ||
+        combined.includes('wellness package') || combined.includes('self-care items')) {
+      return 'Services & Abonnements';
+    }
+    
+    // Sports & Fitness
+    if (combined.includes('fascia trainer') || combined.includes('muscle recovery') || 
+        combined.includes('fitness accessory') || combined.includes('football sock') ||
+        combined.includes('moisture-wicking') || combined.includes('training gear') ||
+        combined.includes('water bottle') || combined.includes('insulated') ||
+        (name.includes('zoltra') && !combined.includes('bundle'))) {
+      return 'Sport & Fitness';
+    }
+    
+    // Fashion & Accessories
+    if (combined.includes('stiletto heels') || combined.includes('high heel shoes') || 
+        combined.includes('shoe accessory') || combined.includes('foot care') ||
+        combined.includes('gel inserts') || combined.includes('arch support') ||
+        combined.includes('schuhe') || combined.includes('schuh') || 
+        combined.includes('mode') || combined.includes('kleidung') || combined.includes('socke')) {
+      return 'Mode & Accessoires';
+    }
+    
+    // Home & Garden
+    if (combined.includes('pflanzen') || combined.includes('garten') || 
+        combined.includes('pflanzenpflege') || combined.includes('grove') ||
+        combined.includes('plant care') || combined.includes('soil moisture')) {
+      return 'Heim & Garten';
+    }
+    
+    // Household & Cleaning
+    if (combined.includes('cleaning tools') || combined.includes('microfiber cloths') || 
+        combined.includes('scrub brushes') || combined.includes('cleaning supplies')) {
+      return 'Haushalt & Reinigung';
+    }
+    
+    // Beauty & Care
+    if (combined.includes('beauty') || combined.includes('pflege') || 
+        combined.includes('cream') || combined.includes('kosmetik') ||
+        combined.includes('schönheit')) {
+      return 'Beauty & Pflege';
+    }
+    
+    return 'Sonstiges';
+  };
+
   // Helper function to get available options from current filtered products
   const getAvailableOptionsFromProducts = () => {
     const seasons = new Set<string>();
-    const investors = new Set<string>();
     const categories = new Set<string>();
     const episodes = new Set<string>();
 
     filteredProducts.forEach(product => {
       if (product.season) seasons.add(product.season);
-      if (product.investor) investors.add(product.investor);
+      // Use the category assigned by ProductMapper
       if (product.category) categories.add(product.category);
       
       // Try to extract episode information from product data
@@ -1213,10 +1438,33 @@ export default function App() {
       }
     });
 
+    // Use the same investor list as the top menu (alphabetically sorted)
+    const allInvestors = [
+      "Carsten Maschmeyer",
+      "Christian Miele",
+      "Dagmar Wöhrl",
+      "Frank Thelen",
+      "Janna Ensthaler",
+      "Judith Williams",
+      "Lena Gercke",
+      "Ralf Dümmel"
+    ];
+
+    // If no products loaded yet, provide default categories
+    const defaultCategories = categories.size === 0 ? [
+      'Sport & Fitness',
+      'Gesundheit & Nahrungsergänzung', 
+      'Haustiere',
+      'Mode & Accessoires',
+      'Smart Home & Technologie',
+      'Heim & Garten',
+      'Sonstiges'
+    ] : Array.from(categories).sort();
+
     return {
       seasons: Array.from(seasons).sort(),
-      investors: Array.from(investors).sort(),
-      categories: Array.from(categories).sort(),
+      investors: allInvestors,
+      categories: defaultCategories,
       episodes: Array.from(episodes).sort()
     };
   };
@@ -1273,9 +1521,6 @@ export default function App() {
     }
     
     // Other brands
-    if (productLower.includes('bee cream')) {
-      return 'Bee Cream';
-    }
     if (productLower.includes('nailmatic')) {
       return 'Nailmatic';
     }
@@ -1283,10 +1528,31 @@ export default function App() {
     return null;
   };
 
+  // Temporary: Analyze product payloads for category assignment
+  const analyzeProductsForCategories = (products: any[]) => {
+    console.log('📊 PRODUCT PAYLOAD ANALYSIS FOR CATEGORIES (Testing):');
+    console.log('='.repeat(60));
+    
+    products.forEach((product, index) => {
+      console.log(`\n🔸 Product ${index + 1}: "${product.name}"`);
+      console.log(`📝 Description: "${product.description?.substring(0, 100)}..."`);
+      console.log(`🏷️ Available fields:`, Object.keys(product));
+      console.log(`📦 Full payload:`, product);
+      console.log('-'.repeat(40));
+    });
+    
+    // Test automatic category assignment
+    console.log('\n🤖 TESTING CATEGORY ASSIGNMENT:');
+    products.forEach((product) => {
+      const category = testCategoryAssignment(product);
+      console.log(`"${product.name}" → Category: "${category}"`);
+    });
+  };
+
   // Load all products once when leaving home screen
-  const loadAllProducts = async () => {
+  const loadAllProducts = async (): Promise<any[] | null> => {
     console.log('🔵 loadAllProducts called - allProductsLoaded:', allProductsLoaded, 'allProductsCache:', !!allProductsCache);
-    if (allProductsLoaded || allProductsCache) return; // Already loaded
+    if (allProductsLoaded || allProductsCache) return allProductsCache; // Already loaded
     
     console.log('🟢 Starting multi-query product loading...');
     setIsLoading(true);
@@ -1296,7 +1562,7 @@ export default function App() {
       const searchQueries = [
         "Höhle der Löwen",                                    // Core DHDL products
         "Zoltra Aerostiletto Dogs-Guard ANUUX FYTA",        // Brand-focused 1
-        "Bee Cream Nailmatic Staffel 17 Staffel 16",        // Brand-focused 2 + recent episodes  
+        "Nailmatic Staffel 17 Staffel 16",                  // Brand-focused 2 + recent episodes  
         "Innovation Startup Produkt Deutschland Erfindung",  // Category-focused
         "Investor Deal Carsten Maschmeyer Judith Williams",  // Investor-focused
         "Ralf Dümmel Dagmar Wöhrl Nils Glagau Investment"   // Additional investors
@@ -1333,9 +1599,31 @@ export default function App() {
       
       if (allProducts.size > 0) {
         const mappedProducts = ProductMapper.mapApiProductsToDummy(Array.from(allProducts.values()));
-        console.log('🔴 Setting cache with products:', mappedProducts.length, 'products');
-        setAllProductsCache(mappedProducts);
+        
+        // Filter out products from Season 15 and older
+        const filteredProducts = mappedProducts.filter(product => {
+          if (product.season) {
+            const seasonMatch = product.season.match(/Staffel (\d+)/i);
+            if (seasonMatch) {
+              const seasonNumber = parseInt(seasonMatch[1]);
+              const isRecentSeason = seasonNumber >= 16;
+              if (!isRecentSeason) {
+                console.log(`🚫 Filtering out old season: "${product.name}" from ${product.season}`);
+              }
+              return isRecentSeason;
+            }
+          }
+          // Keep products without season data
+          return true;
+        });
+        
+        console.log('🔴 Setting cache with products:', filteredProducts.length, 'products (filtered from', mappedProducts.length, 'total)');
+        console.log('📅 Excluded products from Season 15 and older:', mappedProducts.length - filteredProducts.length);
+        setAllProductsCache(filteredProducts);
         setAllProductsLoaded(true);
+        
+        // Analyze products for category assignment testing (using filtered products)
+        analyzeProductsForCategories(filteredProducts);
         
         // Extract metadata from loaded products
         const staffelnSet = new Set<string>();
@@ -1343,7 +1631,7 @@ export default function App() {
         const kategorienSet = new Set<string>();
         const markenSet = new Set<string>();
         
-        mappedProducts.forEach(product => {
+        filteredProducts.forEach(product => {
           if (product.season) staffelnSet.add(product.season);
           if (product.investor) investorenSet.add(product.investor);
           if (product.category) kategorienSet.add(product.category);
@@ -1358,118 +1646,48 @@ export default function App() {
         });
         
         // Update available options based on actual products
-        setAvailableStaffeln(Array.from(staffelnSet).sort());
+        // Sort Staffeln in descending order (highest first)
+        setAvailableStaffeln(Array.from(staffelnSet).sort((a, b) => {
+          const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+          const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+          return numB - numA; // Descending order
+        }));
         setAvailableInvestoren(Array.from(investorenSet).sort());
-        setAvailableKategorien(Array.from(kategorienSet).sort());
-        setAvailableMarken(Array.from(markenSet).sort());
+        setAvailableKategorien(Array.from(kategorienSet).sort()); // Alphabetical order
+        setAvailableMarken(Array.from(markenSet).sort()); // Alphabetical order
         
         console.log(`Loaded metadata: ${staffelnSet.size} seasons, ${investorenSet.size} investors, ${kategorienSet.size} categories, ${markenSet.size} brands`);
+        
+        setIsLoading(false);
+        return filteredProducts; // Return the loaded products
       }
     } catch (error) {
       console.error('Error loading all products:', error);
-    } finally {
       setIsLoading(false);
+      return null;
     }
   };
 
   // Fetch available staffeln from API
-  const fetchAvailableStaffeln = async () => {
-    try {
-      const apiResponse = await apiService.searchByText("Höhle der Löwen alle Staffeln Produkte");
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const staffelnSet = new Set<string>();
-        
-        apiResponse.results.forEach(result => {
-          if (result.payload.staffel) {
-            staffelnSet.add(`Staffel ${result.payload.staffel}`);
-          }
-        });
-        
-        const staffelnArray = Array.from(staffelnSet)
-          .sort((a, b) => {
-            const numA = parseInt(a.replace("Staffel ", ""));
-            const numB = parseInt(b.replace("Staffel ", ""));
-            return numB - numA; // Newest first
-          })
-          .slice(0, 5); // Show up to 5 most recent seasons
-          
-        setAvailableStaffeln(staffelnArray);
-      }
-    } catch (error) {
-      console.error('Error fetching available staffeln:', error);
-      // Fallback to known seasons if API fails
-      setAvailableStaffeln(["Staffel 17", "Staffel 16", "Staffel 15"]);
-    }
-  };
 
   // Fetch available investors from API
   const fetchAvailableInvestoren = async () => {
     try {
       // For initial metadata, just use hardcoded investors since API doesn't provide this data
       // The real investor data will come from loadAllProducts when products are mapped
-      setAvailableInvestoren(["Judith Williams", "Carsten Maschmeyer", "Jana Ensthaler", "Nils Glagau", "Dagmar Wöhrl", "Ralf Dümmel"]);
+      setAvailableInvestoren(["Judith Williams", "Carsten Maschmeyer", "Janna Ensthaler", "Nils Glagau", "Dagmar Wöhrl", "Ralf Dümmel"]);
     } catch (error) {
       console.error('Error fetching available investors:', error);
       setAvailableInvestoren(["Judith Williams", "Carsten Maschmeyer", "Nils Glagau"]);
     }
   };
 
-  // Fetch available categories from API
-  const fetchAvailableKategorien = async () => {
-    try {
-      const apiResponse = await apiService.searchByText("Höhle der Löwen alle Kategorien Produkte");
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        const kategorienSet = new Set<string>();
-        
-        mappedProducts.forEach(product => {
-          if (product.category) {
-            kategorienSet.add(product.category);
-          }
-        });
-        
-        const kategorienArray = Array.from(kategorienSet).sort();
-        setAvailableKategorien(kategorienArray);
-      }
-    } catch (error) {
-      console.error('Error fetching available categories:', error);
-      setAvailableKategorien([]);
-    }
-  };
 
-  // Fetch available brands from API
-  const fetchAvailableMarken = async () => {
-    try {
-      const apiResponse = await apiService.searchByText("Höhle der Löwen alle Marken Produkte");
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const markenSet = new Set<string>();
-        
-        apiResponse.results.forEach(result => {
-          if (result.payload.name) {
-            markenSet.add(result.payload.name);
-          }
-        });
-        
-        const markenArray = Array.from(markenSet).sort();
-        setAvailableMarken(markenArray);
-      }
-    } catch (error) {
-      console.error('Error fetching available brands:', error);
-      setAvailableMarken([]);
-    }
-  };
 
   // Load available data on component mount
   useEffect(() => {
     console.log('🔷 Initial mount - fetching metadata...');
-    fetchAvailableStaffeln();
     fetchAvailableInvestoren();
-    // Don't fetch categories - they come from products which don't have category data in API
-    // fetchAvailableKategorien();
-    fetchAvailableMarken();
     console.log('🔶 Available categories on mount:', availableKategorien);
   }, []);
 
@@ -1487,7 +1705,17 @@ export default function App() {
   };
 
   const getAvailableInvestoren = () => {
-    return availableInvestoren;
+    // Return all investors in alphabetical order
+    return [
+      "Carsten Maschmeyer",
+      "Christian Miele",
+      "Dagmar Wöhrl",
+      "Frank Thelen",
+      "Janna Ensthaler",
+      "Judith Williams",
+      "Lena Gercke",
+      "Ralf Dümmel"
+    ];
   };
 
   const getAvailableKategorien = () => {
@@ -1509,6 +1737,8 @@ export default function App() {
   };
 
   const handleStaffelClick = async (staffel: string) => {
+    console.log(`🎬 Season clicked: "${staffel}" - using LOCAL filtering`);
+    
     setCurrentSearchTerm(staffel);
     setSearchMethod("text");
     setShowSplitScreen(true);
@@ -1517,18 +1747,31 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      // Extract season number for API search
-      const seasonNumber = staffel.replace("Staffel ", "");
-      const apiResponse = await apiService.searchByText(`Höhle der Löwen ${staffel} Staffel ${seasonNumber} Produkte`);
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        setFilteredProducts(mappedProducts);
-      } else {
-        setFilteredProducts([]);
+      // Ensure all products are loaded first
+      if (!allProductsCache) {
+        console.log('🔵 No products cached, loading all products first...');
+        await loadAllProducts();
+        if (!allProductsCache) {
+          console.log('❌ Failed to load products for season filtering');
+          setFilteredProducts([]);
+          setIsLoading(false);
+          return;
+        }
       }
+
+      console.log(`🔍 Filtering locally for season: "${staffel}"`);
+      
+      // Filter locally from cached products
+      const filtered = allProductsCache.filter(product => {
+        const matches = product.season === staffel;
+        console.log(`🎬 "${product.name}": season="${product.season}", matches="${staffel}"? ${matches}`);
+        return matches;
+      });
+
+      console.log(`✅ Local season filter results: ${filtered.length} products for "${staffel}"`);
+      setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Season search error:', error);
+      console.error('Local season filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -1536,6 +1779,8 @@ export default function App() {
   };
 
   const handleInvestorClick = async (investor: string) => {
+    console.log(`💰 Investor clicked: "${investor}" - using LOCAL filtering`);
+    
     setCurrentSearchTerm(`Investor: ${investor}`);
     setSearchMethod("text");
     setShowSplitScreen(true);
@@ -1544,16 +1789,38 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      const apiResponse = await apiService.searchByText(`Höhle der Löwen ${investor} Investor Produkte Deal`);
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        setFilteredProducts(mappedProducts);
-      } else {
-        setFilteredProducts([]);
+      // Ensure all products are loaded first
+      let productsToFilter = allProductsCache;
+      if (!productsToFilter) {
+        console.log('🔵 No products cached, loading all products first...');
+        productsToFilter = await loadAllProducts();
+        if (!productsToFilter) {
+          console.log('❌ Failed to load products for investor filtering');
+          setFilteredProducts([]);
+          setIsLoading(false);
+          return;
+        }
       }
+
+      console.log(`🔍 Filtering locally for investor: "${investor}"`);
+      
+      // Filter locally from cached products - handle multiple investors
+      const filtered = productsToFilter.filter(product => {
+        // Handle various investor field formats
+        const productInvestors = product.investor || '';
+        
+        // Check if investor string contains the selected investor
+        // This handles cases like "Ralf Dümmel, Judith Williams" or "Carsten Maschmeyer & Dagmar Wöhrl"
+        const matches = productInvestors.includes(investor);
+        
+        console.log(`💰 "${product.name}": investor="${productInvestors}", contains "${investor}"? ${matches}`);
+        return matches;
+      });
+
+      console.log(`✅ Local investor filter results: ${filtered.length} products for "${investor}"`);
+      setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Investor search error:', error);
+      console.error('Local investor filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -1561,6 +1828,8 @@ export default function App() {
   };
 
   const handleKategorieClick = async (kategorie: string) => {
+    console.log(`🏷️ Category clicked: "${kategorie}" - using LOCAL filtering`);
+    
     setCurrentSearchTerm(`Kategorie: ${kategorie}`);
     setSearchMethod("text");
     setShowSplitScreen(true);
@@ -1569,16 +1838,36 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      const apiResponse = await apiService.searchByText(`${kategorie} Produkte Höhle der Löwen`);
-      
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-        setFilteredProducts(mappedProducts);
-      } else {
-        setFilteredProducts([]);
+      // Ensure all products are loaded first
+      if (!allProductsCache) {
+        console.log('🔵 No products cached, loading all products first...');
+        await loadAllProducts();
+        if (!allProductsCache) {
+          console.log('❌ Failed to load products for category filtering');
+          setFilteredProducts([]);
+          setIsLoading(false);
+          return;
+        }
       }
+
+      console.log(`🔍 Filtering locally for category: "${kategorie}"`);
+      console.log(`🔍 Total cached products: ${allProductsCache.length}`);
+      
+      // Filter locally from cached products
+      const filtered = allProductsCache.filter(product => {
+        const matches = product.category === kategorie;
+        console.log(`🏷️ "${product.name}": category="${product.category}", matches="${kategorie}"? ${matches}`);
+        return matches;
+      });
+
+      console.log(`✅ Local category filter results: ${filtered.length} products for "${kategorie}"`);
+      filtered.forEach(product => {
+        console.log(`   - "${product.name}" (${product.category})`);
+      });
+      
+      setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Category search error:', error);
+      console.error('Local category filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -1586,120 +1875,162 @@ export default function App() {
   };
 
   const handleMarkenClick = async (marke: string) => {
-    // Load all products if not already loaded
-    if (!allProductsCache) {
-      await loadAllProducts();
-    }
-
+    console.log(`🏷️ Brand clicked: "${marke}" - using LOCAL filtering`);
+    
     setCurrentSearchTerm(`Marke: ${marke}`);
     setSearchMethod("text");
     setShowSplitScreen(true);
     setShowProductSearch(false);
     setDropdowns((prev) => ({ ...prev, marken: false }));
-    
-    // Filter from cache if available
-    if (allProductsCache) {
-      const filtered = allProductsCache.filter(product => 
-        product.name.startsWith(`${marke} – `) || product.name.toLowerCase().includes(marke.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-    } else {
-      // Fallback to API if cache not available
-      setIsLoading(true);
-      try {
-        const apiResponse = await apiService.searchByText(`${marke} Marke Produkt Höhle der Löwen`);
-        
-        if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-          const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-          setFilteredProducts(mappedProducts);
-        } else {
+    setIsLoading(true);
+
+    try {
+      // Ensure all products are loaded first
+      if (!allProductsCache) {
+        console.log('🔵 No products cached, loading all products first...');
+        await loadAllProducts();
+        if (!allProductsCache) {
+          console.log('❌ Failed to load products for brand filtering');
           setFilteredProducts([]);
+          setIsLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error('Brand search error:', error);
-        setFilteredProducts([]);
-      } finally {
-        setIsLoading(false);
       }
+
+      console.log(`🔍 Filtering locally for brand: "${marke}"`);
+      
+      // Filter locally from cached products using proper brand extraction
+      const filtered = allProductsCache.filter(product => {
+        const productBrand = extractBrandFromProductName(product.name);
+        const matches = productBrand === marke;
+        console.log(`🏷️ "${product.name}": extracted brand="${productBrand}", matches="${marke}"? ${matches}`);
+        return matches;
+      });
+
+      console.log(`✅ Local brand filter results: ${filtered.length} products for "${marke}"`);
+      setFilteredProducts(filtered);
+    } catch (error) {
+      console.error('Local brand filtering error:', error);
+      setFilteredProducts([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const applyFilters = async () => {
+    console.log('🔧 applyFilters() called with:', {
+      hasCache: !!allProductsCache,
+      cacheLength: allProductsCache?.length || 0,
+      activeFilters
+    });
+    
     setIsLoading(true);
     
     try {
-      // Build search query from active filters
-      let searchTerms = ["Höhle der Löwen Produkte"];
-      
-      // Add seasons to search
-      if (activeFilters.seasons.length > 0) {
-        const seasonNumbers = activeFilters.seasons.map(s => s.replace("Staffel ", ""));
-        searchTerms.push(...activeFilters.seasons, ...seasonNumbers);
-      }
-      
-      // Add episodes to search
-      if (activeFilters.episodes.length > 0) {
-        const episodeNumbers = activeFilters.episodes.map(e => e.replace("Folge ", ""));
-        searchTerms.push(...activeFilters.episodes, ...episodeNumbers);
-      }
-      
-      // Add investors to search
-      if (activeFilters.investors.length > 0) {
-        searchTerms.push(...activeFilters.investors.map(i => `${i} Investor`));
-      }
-      
-      // Add categories to search
-      if (activeFilters.categories.length > 0) {
-        searchTerms.push(...activeFilters.categories);
-      }
-      
-      // Add brands to search
-      if (activeFilters.brands.length > 0) {
-        searchTerms.push(...activeFilters.brands);
+      // Ensure all products are loaded first
+      if (!allProductsCache) {
+        console.log('🔵 No products cached, loading all products first...');
+        await loadAllProducts();
+        // loadAllProducts will set allProductsCache, but we need to wait for the next render
+        if (!allProductsCache) {
+          console.log('❌ Failed to load products for filtering');
+          setFilteredProducts([]);
+          return;
+        }
       }
 
-      const searchQuery = searchTerms.join(" ");
-      const apiResponse = await apiService.searchByText(searchQuery);
+      console.log('🔍 Applying local filters to', allProductsCache.length, 'cached products');
+      console.log('🔍 Active filters:', activeFilters);
       
-      if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
-        let mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
+      // Filter locally from cached products
+      let filtered = allProductsCache.filter(product => {
+        // Season filter
+        if (activeFilters.seasons.length > 0) {
+          if (!product.season || !activeFilters.seasons.includes(product.season)) {
+            return false;
+          }
+        }
         
-        // Apply price filter locally since API doesn't support price filtering
-        if (activeFilters.priceRange !== "all") {
-          mappedProducts = mappedProducts.filter((product) => {
-            const price = parseFloat(product.price.replace(",", "."));
-            switch (activeFilters.priceRange) {
-              case "under-20":
-                return price < 20;
-              case "20-50":
-                return price >= 20 && price <= 50;
-              case "over-50":
-                return price > 50;
-              case "under-50":
-                return price < 50;
-              default:
-                return true;
-            }
+        // Episode filter
+        if (activeFilters.episodes.length > 0) {
+          const episode = 'episode' in product ? (product as any).episode : undefined;
+          if (!episode || !activeFilters.episodes.includes(episode)) {
+            return false;
+          }
+        }
+        
+        // Investor filter - handle multiple investors
+        if (activeFilters.investors.length > 0) {
+          const productInvestors = product.investor || '';
+          // Check if any of the selected investors are in the product's investor string
+          const hasMatchingInvestor = activeFilters.investors.some(investor => 
+            productInvestors.includes(investor)
+          );
+          if (!hasMatchingInvestor) {
+            return false;
+          }
+        }
+        
+        // Category filter
+        if (activeFilters.categories.length > 0) {
+          console.log(`🏷️ Checking product "${product.name}": category="${product.category}", required=${activeFilters.categories}`);
+          if (!product.category || !activeFilters.categories.includes(product.category)) {
+            console.log(`❌ Product filtered out: "${product.name}" (category: "${product.category}")`);
+            return false;
+          }
+          console.log(`✅ Product matches category: "${product.name}"`);
+        }
+        
+        // Brand filter (check both prefixed name and brand extraction)
+        if (activeFilters.brands.length > 0) {
+          const productBrand = extractBrandFromProductName(product.name);
+          const matchesBrand = activeFilters.brands.some(brand => {
+            return product.name.toLowerCase().includes(brand.toLowerCase()) ||
+                   (productBrand && productBrand.toLowerCase().includes(brand.toLowerCase()));
           });
+          if (!matchesBrand) {
+            return false;
+          }
         }
         
-        // Apply popularity filter locally
-        if (activeFilters.popular) {
-          mappedProducts = mappedProducts
-            .sort((a, b) => {
-              const aScore = a.rating * Math.log(a.reviews + 1);
-              const bScore = b.rating * Math.log(b.reviews + 1);
-              return bScore - aScore;
-            })
-            .slice(0, Math.min(6, mappedProducts.length));
-        }
-        
-        setFilteredProducts(mappedProducts);
-      } else {
-        setFilteredProducts([]);
+        return true;
+      });
+
+      // Apply price filter
+      if (activeFilters.priceRange !== "all") {
+        filtered = filtered.filter((product) => {
+          const price = parseFloat(product.price.replace(",", "."));
+          switch (activeFilters.priceRange) {
+            case "under-20":
+              return price < 20;
+            case "20-50":
+              return price >= 20 && price <= 50;
+            case "over-50":
+              return price > 50;
+            case "under-50":
+              return price < 50;
+            default:
+              return true;
+          }
+        });
       }
+      
+      // Apply popularity filter
+      if (activeFilters.popular) {
+        filtered = filtered
+          .sort((a, b) => {
+            const aScore = a.rating * Math.log(a.reviews + 1);
+            const bScore = b.rating * Math.log(b.reviews + 1);
+            return bScore - aScore;
+          })
+          .slice(0, Math.min(6, filtered.length));
+      }
+
+      console.log('✅ Local filtering complete:', filtered.length, 'products match filters');
+      setFilteredProducts(filtered);
+      
     } catch (error) {
-      console.error('Filter search error:', error);
+      console.error('Local filter error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -1744,6 +2075,42 @@ export default function App() {
       });
     }
   };
+
+  // Trigger local filtering whenever activeFilters changes
+  useEffect(() => {
+    const hasActiveFilters = 
+      activeFilters.seasons.length > 0 ||
+      activeFilters.episodes.length > 0 ||
+      activeFilters.investors.length > 0 ||
+      activeFilters.categories.length > 0 ||
+      activeFilters.brands.length > 0 ||
+      activeFilters.priceRange !== "all" ||
+      activeFilters.popular;
+
+    console.log('🔄 Filter useEffect triggered:', {
+      hasActiveFilters,
+      hasCachedProducts: !!allProductsCache,
+      cacheLength: allProductsCache?.length || 0,
+      activeFilters
+    });
+
+    if (hasActiveFilters) {
+      if (allProductsCache && allProductsCache.length > 0) {
+        console.log('✅ Cache ready, applying local filters immediately...');
+        applyFilters();
+      } else {
+        console.log('⏳ Cache not ready, loading all products first...');
+        loadAllProducts().then(() => {
+          console.log('✅ Products loaded, now applying filters...');
+          // applyFilters will be called by the next useEffect trigger when allProductsCache updates
+        });
+      }
+    } else if (!hasActiveFilters && allProductsCache) {
+      console.log('🔄 No active filters, showing all cached products');
+      setFilteredProducts(allProductsCache);
+      setIsLoading(false);
+    }
+  }, [activeFilters, allProductsCache]);
 
   const handleImageSearch = async () => {
     if (selectedImage) {
@@ -2091,7 +2458,8 @@ export default function App() {
       }
 
       try {
-        const apiResponse = await apiService.searchByText(splitScreenSearchQuery.trim(), 0.5);
+        console.log(`🚀 Starting semantic split-screen search for: "${splitScreenSearchQuery.trim()}"`);
+        const apiResponse = await SemanticSearchService.search(splitScreenSearchQuery.trim());
         
         if (apiResponse && apiResponse.results) {
           const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
@@ -4928,7 +5296,7 @@ export default function App() {
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                       {/* Staffel Filter Dropdown */}
                       <div className={`relative ${filterDropdowns.staffel ? 'z-[500]' : 'z-[250]'}`}>
                         <button
@@ -5227,7 +5595,7 @@ export default function App() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            {["BIOM8", "Ankerkraut", "Waterdrop", "KLEAN KANTEEN", "SNOCKS", "CleanKids", "FitFood", "SmartHome Pro", "GreenClean"].map((brand) => (
+                            {getAvailableMarken().map((brand: string) => (
                               <label
                                 key={brand}
                                 className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -5360,6 +5728,8 @@ export default function App() {
                     >
                       <button
                         onClick={async () => {
+                          console.log('🔄 Filter Reset clicked - using LOCAL cache');
+                          
                           setActiveFilters({
                             seasons: [],
                             episodes: [],
@@ -5378,24 +5748,32 @@ export default function App() {
                             preis: false,
                           });
                           
-                          // Load all products from API
-                          setIsLoading(true);
-                          try {
-                            const apiResponse = await apiService.searchByText("Höhle der Löwen Produkte", 0);
-                            if (apiResponse && apiResponse.results) {
-                              const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-                              setFilteredProducts(mappedProducts);
-                              setOriginalSearchResults(mappedProducts);
-                            } else {
+                          // Use cached products instead of API call
+                          if (allProductsCache && allProductsCache.length > 0) {
+                            console.log('✅ Showing all cached products:', allProductsCache.length);
+                            setFilteredProducts(allProductsCache);
+                            setOriginalSearchResults(allProductsCache);
+                          } else {
+                            console.log('🔵 No products cached, loading all products...');
+                            setIsLoading(true);
+                            try {
+                              await loadAllProducts();
+                              if (allProductsCache && allProductsCache.length > 0) {
+                                console.log('✅ Products loaded, showing all:', allProductsCache.length);
+                                setFilteredProducts(allProductsCache);
+                                setOriginalSearchResults(allProductsCache);
+                              } else {
+                                console.log('❌ Failed to load products');
+                                setFilteredProducts([]);
+                                setOriginalSearchResults([]);
+                              }
+                            } catch (error) {
+                              console.error('Error loading all products:', error);
                               setFilteredProducts([]);
                               setOriginalSearchResults([]);
+                            } finally {
+                              setIsLoading(false);
                             }
-                          } catch (error) {
-                            console.error('Error loading all products:', error);
-                            setFilteredProducts([]);
-                            setOriginalSearchResults([]);
-                          } finally {
-                            setIsLoading(false);
                           }
                         }}
                         className="text-sm transition-colors"
@@ -5412,37 +5790,6 @@ export default function App() {
                         Alle Filter zurücksetzen
                       </button>
 
-                      <motion.button
-                        onClick={() => {
-                          applyFilters();
-                          setShowFilters(false);
-                          setFilterDropdowns({
-                            staffel: false,
-                            folge: false,
-                            investor: false,
-                            kategorie: false,
-                            marke: false,
-                            preis: false,
-                          });
-                        }}
-                        className="px-4 py-2 rounded-lg transition-colors text-sm"
-                        style={{
-                          backgroundColor: "#19535F",
-                          color: "#FCFDFE",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor =
-                            "#144249";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor =
-                            "#19535F";
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Filter anwenden
-                      </motion.button>
                     </div>
                   </motion.div>
                 )}

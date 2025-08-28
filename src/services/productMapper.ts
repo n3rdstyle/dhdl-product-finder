@@ -104,9 +104,61 @@ export class ProductMapper {
   }
 
   private static extractCategory(payload: ApiProduct['payload']): string {
-    // Only return category if explicitly provided by API
-    // Don't assign random categories since API doesn't support category data
-    return payload.category || "";
+    // Assign categories based on product brand/name since API doesn't provide category data
+    const name = payload.name?.toLowerCase() || '';
+    const description = payload.context_file?.toLowerCase() || '';
+    const combined = `${name} ${description}`;
+    
+    // Debug logging
+    if (name.includes('partner')) {
+      console.log(`🔍 ProductMapper extractCategory - Partner product found:`);
+      console.log(`  Name: "${payload.name}"`);
+      console.log(`  Name (lowercase): "${name}"`);
+      console.log(`  Contains 'zoltra'?: ${name.includes('zoltra')}`);
+      console.log(`  Contains 'partner'?: ${name.includes('partner')}`);
+    }
+    
+    // Brand-based category assignment (highest priority)
+    if (name.includes('zoltra sports') || name.includes('zoltra') || 
+        name.includes('partner-bundle') || name.includes('sorglos-bundle') ||
+        name.includes('pickup faszientrainer') || name.includes('grip') ||
+        name.includes('fußball') || name.includes('cleaning kit')) {
+      return 'Sport & Fitness';
+    }
+    if (name.includes('anuux')) {
+      return 'Gesundheit & Nahrungsergänzung';
+    }
+    if (name.includes('dogs-guard')) {
+      return 'Haustiere';
+    }
+    if (name.includes('aerostiletto')) {
+      return 'Mode & Accessoires';
+    }
+    
+    // FYTA brand needs sub-categorization based on product type
+    if (name.includes('fyta')) {
+      // FYTA plant sensors go to Home & Garden
+      if (combined.includes('soil moisture') || combined.includes('plant care') || 
+          combined.includes('beam gen 2') || combined.includes('grow lights') ||
+          combined.includes('plant growth') || combined.includes('photosynthesis')) {
+        return 'Heim & Garten';
+      }
+      // FYTA lighting products go to Smart Home
+      if (combined.includes('smart lighting') || combined.includes('led bulbs') || 
+          combined.includes('wireless control') || combined.includes('home automation') ||
+          combined.includes('mood lighting') || combined.includes('dimmable')) {
+        return 'Smart Home & Technologie';
+      }
+      // Default FYTA to Smart Home if unclear
+      return 'Smart Home & Technologie';
+    }
+    
+    // Specific product overrides for edge cases
+    if (name.includes('bee cream')) {
+      return 'Beauty & Pflege';
+    }
+    
+    return 'Sonstiges';
   }
 
   private static getBrandPrefix(productName: string): string | null {
@@ -394,7 +446,7 @@ export class ProductMapper {
   }
 
   private static getManualInvestorMapping(productName: string): string | null {
-    // FYTA products - both Carsten Maschmeyer and Jana Ensthaler invested together
+    // FYTA products - both Carsten Maschmeyer and Janna Ensthaler invested together
     const fytaProducts = [
       "FYTA Beam Gen 2",
       "FYTA Beam Gen 2 – 3er Pack", 
@@ -410,7 +462,7 @@ export class ProductMapper {
         productName.toLowerCase().includes("fyta") || 
         productName.toLowerCase().includes("beam gen") || 
         productName.toLowerCase().includes("grove set")) {
-      return "Carsten Maschmeyer & Jana Ensthaler";
+      return "Carsten Maschmeyer & Janna Ensthaler";
     }
     
     // Check if the product name matches any Aerostiletto products (case-insensitive)
