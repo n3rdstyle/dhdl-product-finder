@@ -1,8 +1,6 @@
 import { motion } from "motion/react";
 import {
   Search,
-  Upload,
-  Image,
   X,
   ExternalLink,
   Star,
@@ -443,11 +441,7 @@ const legalPagesContent = {
 
       <h2><strong>Auftragsverarbeiter & Empfänger</strong> (Art. 28 DSGVO)</h2>
       <p>Dienstleisterliste (Beispiel/Platzhalter):</p>
-      <ul>
-        <li>Hosting: [Anbieter, Sitzland]</li>
-        <li>Consent-Tool: [Anbieter, Sitzland]</li>
-        <li>(Optional) Webanalyse: [Toolname], <strong>nur nach Opt-In</strong>.</li>
-      </ul>
+      <p>Hosting: Host Europe GmbH, Sitz Köln, Deutschland</p>
 
       <h2><strong>Drittlandtransfer</strong></h2>
       <p>Sofern Dienste Daten in Drittländer (z. B. USA) übertragen, nutzen wir geeignete Garantien (z. B. EU-Standardvertragsklauseln) und aktivieren diese Dienste <strong>erst nach Einwilligung</strong>.</p>
@@ -492,8 +486,6 @@ const legalPagesContent = {
       <p>Umsatzsteuer-Nr: 42/733/00396<br>
       Umsatzsteuer-ID: DE 265 683 841</p>
 
-      <h3><strong>Inhaltlich verantwortlich i. S. d. § 18 Abs. 2 MStV</strong> (nur bei journalistisch-redaktionellen Inhalten):</h3>
-      <p>[Name, Anschrift]</p>
 
       <hr>
 
@@ -590,7 +582,7 @@ const legalPagesContent = {
       {
         id: 12,
         question: "Presse/Kontakt",
-        answer: "Für Presse- oder Kooperationsanfragen: <strong>[Presse-/Kontakt-E-Mail]</strong>."
+        answer: "Für Presse- oder Kooperationsanfragen: info@icompetence.de."
       },
       {
         id: 13,
@@ -749,13 +741,13 @@ export default function App() {
     useState<File | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showSplitScreen, setShowSplitScreen] = useState(false);
-  const [searchMethod, setSearchMethod] = useState<
+  const [, setSearchMethod] = useState<
     "text" | "image" | null
   >(null);
   const [isLoading, setIsLoading] = useState(true);
   const [filteredProducts, setFilteredProducts] =
     useState<typeof dummyProducts>([]);
-  const [originalSearchResults, setOriginalSearchResults] =
+  const [, setOriginalSearchResults] =
     useState<typeof dummyProducts>([]);
   const [allProductsCache, setAllProductsCache] = 
     useState<typeof dummyProducts | null>(null);
@@ -1321,7 +1313,7 @@ export default function App() {
         const nameWords = name.split(/\s+/);
         const descWords = description.split(/\s+/);
         
-        nameWords.forEach(nameWord => {
+        nameWords.forEach((nameWord: string) => {
           const similarity = getWordSimilarity(queryWord, nameWord);
           if (similarity > 0.7) {
             const points = Math.round(50 * similarity);
@@ -1330,7 +1322,7 @@ export default function App() {
           }
         });
         
-        descWords.forEach(descWord => {
+        descWords.forEach((descWord: string) => {
           const similarity = getWordSimilarity(queryWord, descWord);
           if (similarity > 0.7) {
             const points = Math.round(20 * similarity);
@@ -1459,6 +1451,9 @@ export default function App() {
           setFilteredProducts(mappedProducts);
           setOriginalSearchResults(mappedProducts);
           
+          // Store products in localStorage for export page
+          localStorage.setItem('dhdl_products', JSON.stringify(mappedProducts));
+          
           // Update response history with result count
           setResponseHistory(prev => 
             prev.map((response, index) => 
@@ -1543,7 +1538,7 @@ export default function App() {
 
   const handleLastEpisodeClick = async () => {
     console.log(`🔴 LETZTE FOLGE BUTTON CLICKED!`);
-    console.log(`📺 Last Episode clicked - finding LATEST episode dynamically`);
+    console.log(`📺 Last Episode clicked - showing all Episode 1 products`);
     
     setSearchMethod("text");
     setShowSplitScreen(true);
@@ -1565,107 +1560,88 @@ export default function App() {
         }
       }
 
-      // Find the latest episode dynamically
-      let latestSeason = 0;
-      let latestEpisode = 0;
-      let latestSeasonName = "";
+      setCurrentSearchTerm(`Letzte Folge (Episode 1)`);
       
-      productsToAnalyze.forEach(product => {
-        // Extract season number
-        if (product.season) {
-          const seasonMatch = product.season.match(/Staffel (\d+)/i);
-          if (seasonMatch) {
-            const seasonNum = parseInt(seasonMatch[1]);
-            
-            // Extract episode number if available
-            const episodeInfo = (product as any).episode;
-            let episodeNum = 1; // Default episode
-            
-            if (episodeInfo) {
-              const episodeMatch = episodeInfo.toString().match(/(\d+)/);
-              if (episodeMatch) {
-                episodeNum = parseInt(episodeMatch[1]);
-              }
-            }
-            
-            // Check if this is later than our current latest
-            if (seasonNum > latestSeason || (seasonNum === latestSeason && episodeNum > latestEpisode)) {
-              latestSeason = seasonNum;
-              latestEpisode = episodeNum;
-              latestSeasonName = product.season;
-            }
+      // Filter for all products from Episode 1 (Folge 1)
+      const filtered = productsToAnalyze.filter(product => {
+        const episodeInfo = (product as any).episode;
+        let isEpisode1 = false;
+        
+        if (episodeInfo) {
+          const episodeMatch = episodeInfo.toString().match(/(\d+)/);
+          if (episodeMatch) {
+            const episodeNum = parseInt(episodeMatch[1]);
+            isEpisode1 = episodeNum === 1;
           }
         }
+        
+        console.log(`📺 "${product.name}": episode="${episodeInfo}", is Episode 1? ${isEpisode1}`);
+        return isEpisode1;
       });
 
-      const latestEpisodeText = `Staffel ${latestSeason}, Folge ${latestEpisode}`;
-      console.log(`🔍 Found latest episode: ${latestEpisodeText}`);
-      
-      setCurrentSearchTerm(`Letzte Folge (${latestEpisodeText})`);
-      
-      // Filter for products from the latest season (since episode data might be incomplete)
-      const filtered = productsToAnalyze.filter(product => {
-        const matches = product.season === latestSeasonName;
-        console.log(`📺 "${product.name}": season="${product.season}", matches latest="${latestSeasonName}"? ${matches}`);
-        return matches;
-      });
-
-      console.log(`✅ Local latest episode filter results: ${filtered.length} products from "${latestEpisodeText}"`);
+      console.log(`✅ Episode 1 filter results: ${filtered.length} products from Folge 1`);
       setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Local latest episode filtering error:', error);
+      console.error('Episode 1 filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePopularProductsClick = async () => {
-    console.log(`⭐ Popular Products clicked - using LOCAL filtering`);
+  const handleNextEpisodeClick = async () => {
+    console.log(`🟢 NÄCHSTE FOLGE BUTTON CLICKED!`);
+    console.log(`📺 Next Episode clicked - showing all Episode 2 products`);
     
-    setCurrentSearchTerm("Beliebte Produkte");
     setSearchMethod("text");
     setShowSplitScreen(true);
-    setShowProductSearch(true);
+    setShowProductSearch(false);
     setIsLoading(true);
 
     try {
       // Ensure all products are loaded first
-      if (!allProductsCache) {
+      let productsToAnalyze = allProductsCache;
+      if (!productsToAnalyze) {
         console.log('🔵 No products cached, loading all products first...');
-        await loadAllProducts();
-        if (!allProductsCache) {
-          console.log('❌ Failed to load products for popular filtering');
+        productsToAnalyze = await loadAllProducts();
+        
+        if (!productsToAnalyze) {
+          console.log('❌ Failed to load products for next episode filtering');
           setFilteredProducts([]);
           setIsLoading(false);
           return;
         }
       }
 
-      console.log(`🔍 Filtering locally for popular products`);
+      setCurrentSearchTerm(`Nächste Folge (Episode 2)`);
       
-      // Sort by rating and reviews to find popular products
-      const filtered = [...allProductsCache]
-        .sort((a, b) => {
-          // Sort by rating first, then by reviews
-          if (b.rating !== a.rating) return b.rating - a.rating;
-          return b.reviews - a.reviews;
-        })
-        .slice(0, 6); // Show only 6 most popular
-
-      console.log(`✅ Local popular products filter results: ${filtered.length} popular products`);
-      filtered.forEach(product => {
-        console.log(`   ⭐ "${product.name}" (rating: ${product.rating}, reviews: ${product.reviews})`);
+      // Filter for all products from Episode 2 (Folge 2)
+      const filtered = productsToAnalyze.filter(product => {
+        const episodeInfo = (product as any).episode;
+        let isEpisode2 = false;
+        
+        if (episodeInfo) {
+          const episodeMatch = episodeInfo.toString().match(/(\d+)/);
+          if (episodeMatch) {
+            const episodeNum = parseInt(episodeMatch[1]);
+            isEpisode2 = episodeNum === 2;
+          }
+        }
+        
+        console.log(`📺 "${product.name}": episode="${episodeInfo}", is Episode 2? ${isEpisode2}`);
+        return isEpisode2;
       });
-      
+
+      console.log(`✅ Episode 2 filter results: ${filtered.length} products from Folge 2`);
       setFilteredProducts(filtered);
     } catch (error) {
-      console.error('Local popular products filtering error:', error);
+      console.error('Episode 2 filtering error:', error);
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleAllProductsClick = async () => {
     console.log('🟡 handleAllProductsClick - cache exists:', !!allProductsCache, 'cache length:', allProductsCache?.length);
@@ -1775,7 +1751,7 @@ export default function App() {
 
   // State for available staffeln from API
   const [availableStaffeln, setAvailableStaffeln] = useState<string[]>([]);
-  const [availableInvestoren, setAvailableInvestoren] = useState<string[]>([]);
+  const [, setAvailableInvestoren] = useState<string[]>([]);
   const [availableKategorien, setAvailableKategorien] = useState<string[]>([]);
   const [availableMarken, setAvailableMarken] = useState<string[]>([]);
 
@@ -2044,22 +2020,51 @@ export default function App() {
     setIsLoading(true);
     try {
       // Strategic multi-query approach to maximize product coverage
-      // 6 targeted queries to capture different product segments
+      // Comprehensive queries including specific product names from context files
       const searchQueries = [
-        "Höhle der Löwen",                                    // Core DHDL products
-        "Zoltra Aerostiletto Dogs-Guard ANUUX FYTA",        // Brand-focused 1
-        "Nailmatic Staffel 17 Staffel 16",                  // Brand-focused 2 + recent episodes  
-        "Innovation Startup Produkt Deutschland Erfindung",  // Category-focused
-        "Investor Deal Carsten Maschmeyer Judith Williams",  // Investor-focused
-        "Ralf Dümmel Dagmar Wöhrl Nils Glagau Investment"   // Additional investors
+        // Core searches
+        "Höhle der Löwen",
+        "*", // Wildcard
+        
+        // Original brands with specific products
+        "Zoltra Grip Fußball Allround Hiking",
+        "Zoltra Partner-Bundle Sorglos-Bundle Starter-Bundle",
+        "Zoltra Wandersocken Cleaning-Kit Dry-Bags Tape",
+        "FYTA Beam Wi-Fi Hub Grove Set",
+        "FYTA Urban Jungle Bundle Beam 2.0",
+        "ANUUX 90 180 540 Kapseln",
+        "Dogs-Guard Leinenführungs-Modul",
+        "Aerostiletto High Heel Pads Beige Schwarz Duo Pack",
+        
+        // New brands with specific products
+        "Miss Mineva Cup Wunder Suppenwunder",
+        "Cup Wunder Mango Curry Rote Linsen Dal",
+        "Suppenwunder Erbse Minze Kokos Tomate Paprika",
+        "Mama Falafelteig Box Edelstahl Former",
+        "Capsello Zahnbürstenbox weiß schwarz Set",
+        "Radanker Fahrradständer Kevlar-Seil Wiese",
+        "Hey Mela Schwangerschaftstest vegan App",
+        "Betta Salt Mineralsalz Pflanzensalz Kalium",
+        "Mamaye Erlebnispaket Löwen Ades Misir Silsi",
+        "Mamaye Shiro Berbere Linsenliebe",
+        
+        // Additional specific product combinations
+        "Faszienrolle ClassicRoll DuoRoll PickUp Faszientrainer",
+        "Recycelte Edelstahl-Trinkflasche Performance eBook",
+        "fermentiert instant vegan glutenfrei",
+        
+        // Season and investor searches
+        "Staffel 18 Staffel 17 Staffel 16",
+        "Frank Thelen Judith Williams Ralf Dümmel",
+        "Carsten Maschmeyer Dagmar Wöhrl Nils Glagau"
       ];
       
       const allProducts = new Map<string, any>(); // Use Map to deduplicate by product name
       
       // Execute searches in parallel for better performance
-      // Try requesting 25 results per query to bypass the 15-result limitation
+      // Request more results per query to get comprehensive coverage
       const searchPromises = searchQueries.map(query => 
-        apiService.searchByText(query, 0, 25).catch(error => {
+        apiService.searchByText(query, 0, 50).catch(error => {
           console.warn(`Search failed for "${query}":`, error);
           return null;
         })
@@ -2086,15 +2091,15 @@ export default function App() {
       if (allProducts.size > 0) {
         const mappedProducts = ProductMapper.mapApiProductsToDummy(Array.from(allProducts.values()));
         
-        // Filter out products from Season 15 and older
+        // Filter out products from very old seasons (keep 14 and newer)
         const filteredProducts = mappedProducts.filter(product => {
           if (product.season) {
             const seasonMatch = product.season.match(/Staffel (\d+)/i);
             if (seasonMatch) {
               const seasonNumber = parseInt(seasonMatch[1]);
-              const isRecentSeason = seasonNumber >= 16;
+              const isRecentSeason = seasonNumber >= 14; // Changed from 16 to 14 to include more products
               if (!isRecentSeason) {
-                console.log(`🚫 Filtering out old season: "${product.name}" from ${product.season}`);
+                console.log(`🚫 Filtering out very old season: "${product.name}" from ${product.season}`);
               }
               return isRecentSeason;
             }
@@ -2146,6 +2151,10 @@ export default function App() {
         
         setIsLoading(false);
         return filteredProducts; // Return the loaded products
+      } else {
+        console.log('No products found from searches');
+        setIsLoading(false);
+        return null;
       }
     } catch (error) {
       console.error('Error loading all products:', error);
@@ -2608,130 +2617,6 @@ export default function App() {
     }
   }, [activeFilters, allProductsCache]);
 
-  const handleImageSearch = async () => {
-    if (selectedImage) {
-      setSearchMethod("image");
-      setCurrentSearchTerm(selectedImage.name);
-      setShowSplitScreen(true);
-      setShowProductSearch(true);
-      setIsLoading(true);
-      
-      // Open chat window on mobile when searching from image button
-      if (isMobile) {
-        setIsChatOpen(true);
-      }
-
-      try {
-        const imageBase64 = await apiService.convertFileToBase64(selectedImage);
-        const apiResponse = await apiService.searchByImage(imageBase64, 0.55);
-        
-        if (apiResponse && apiResponse.results) {
-          const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-          setFilteredProducts(mappedProducts);
-          setOriginalSearchResults(mappedProducts);
-        } else {
-          setFilteredProducts([]);
-          setOriginalSearchResults([]);
-        }
-      } catch (error) {
-        console.error('Image search error:', error);
-        setFilteredProducts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Trigger file upload if no image selected
-      document.getElementById("image-upload")?.click();
-    }
-  };
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedImage(file);
-      setSearchMethod("image");
-      setCurrentSearchTerm(file.name);
-      setFilteredProducts([]);
-      setShowSplitScreen(true);
-      setShowProductSearch(true);
-      setIsLoading(true);
-      
-      // Open chat window on mobile when uploading image
-      if (isMobile) {
-        setIsChatOpen(true);
-      }
-      
-      // Automatically trigger search for the uploaded image
-      const searchTerm = file.name;
-      
-      // Add to search history
-      const timestamp = Date.now();
-      const imageUrl = URL.createObjectURL(file);
-      
-      
-      setSearchHistory(prev => [...prev, {
-        term: searchTerm,
-        timestamp,
-        method: "image",
-        imageUrl
-      }]);
-      
-      // Add loading response to history
-      setResponseHistory(prev => [...prev, {
-        searchTerm: searchTerm,
-        resultCount: 0,
-        timestamp,
-        isLoading: true
-      }]);
-
-      try {
-        const imageBase64 = await apiService.convertFileToBase64(file);
-        const apiResponse = await apiService.searchByImage(imageBase64, 0.55);
-        
-        if (apiResponse && apiResponse.results) {
-          const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
-          setFilteredProducts(mappedProducts);
-          setOriginalSearchResults(mappedProducts);
-          
-          // Update response history with result count
-          setResponseHistory(prev => 
-            prev.map((response, index) => 
-              index === prev.length - 1 
-                ? { ...response, resultCount: mappedProducts.length, isLoading: false }
-                : response
-            )
-          );
-        } else {
-          setFilteredProducts([]);
-          setOriginalSearchResults([]);
-          
-          // Update response history with 0 results
-          setResponseHistory(prev => 
-            prev.map((response, index) => 
-              index === prev.length - 1 
-                ? { ...response, resultCount: 0, isLoading: false }
-                : response
-            )
-          );
-        }
-      } catch (error) {
-        console.error('Image search error:', error);
-        setFilteredProducts([]);
-        setOriginalSearchResults([]);
-        
-        // Update response history with error
-        setResponseHistory(prev => 
-          prev.map((response, index) => 
-            index === prev.length - 1 
-              ? { ...response, resultCount: 0, isLoading: false }
-              : response
-          )
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
 
   // Drag and drop handlers
   const [isDragOver, setIsDragOver] = useState(false);
@@ -2791,6 +2676,9 @@ export default function App() {
           const mappedProducts = ProductMapper.mapApiProductsToDummy(apiResponse.results);
           setFilteredProducts(mappedProducts);
           setOriginalSearchResults(mappedProducts);
+          
+          // Store products in localStorage for export page
+          localStorage.setItem('dhdl_products', JSON.stringify(mappedProducts));
           
           // Update response history with result count
           setResponseHistory(prev => 
@@ -3404,8 +3292,9 @@ export default function App() {
                 "Alle Produkte",
                 "Aktuelle Staffel",
                 "Letzte Folge",
+                "Nächste Folge",
                 "Investoren-Deals",
-              ].map((suggestion, index) => (
+              ].map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => {
@@ -3417,6 +3306,8 @@ export default function App() {
                       handleInvestorDealsClick();
                     } else if (suggestion === "Letzte Folge") {
                       handleLastEpisodeClick();
+                    } else if (suggestion === "Nächste Folge") {
+                      handleNextEpisodeClick();
                     }
                   }}
                   className="px-4 py-2 backdrop-blur-sm rounded-full transition-all duration-200 text-sm"
@@ -5466,7 +5357,7 @@ export default function App() {
                                       src={search.imageUrl} 
                                       alt="Uploaded search image"
                                       className="w-full max-w-[120px] h-auto rounded-lg mb-2"
-                                      onError={(e) => {
+                                      onError={() => {
                                         console.log('Image failed to load:', search.imageUrl);
                                       }}
                                     />
@@ -6865,6 +6756,13 @@ export default function App() {
                 >
                   Version 1.0 • Entwickelt mit Löwen-❤️
                 </p>
+                <a
+                  href="/merchant-export"
+                  className="text-xs mt-1 inline-block opacity-30 hover:opacity-60 transition-opacity"
+                  style={{ color: "#C0C5CA" }}
+                >
+                  Admin
+                </a>
               </div>
             </div>
           </motion.div>
